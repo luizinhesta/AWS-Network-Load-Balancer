@@ -1,0 +1,107 @@
+graph TB
+    %% === Usuários na Internet ===
+    subgraph Internet["☁️ Internet"]
+        USER_WEB["👤 Usuário Web<br/>HTTPS (porta 443)"]
+        USER_GAME["🎮 Jogador Luanti<br/>UDP (porta 30000)"]
+    end
+
+    %% === DNS Route 53 ===
+    subgraph Route53["🌐 Route 53 - DNS"]
+        DNS_WEB["www.DOMAIN → ALB<br/>(Alias A Record)"]
+        DNS_GAME["game.DOMAIN → NLB<br/>(Alias A Record)"]
+    end
+
+    %% === VPC ===
+    subgraph VPC["🏗️ VPC 10.0.0.0/16"]
+        IGW["Internet Gateway"]
+
+        %% === Security Groups ===
+        subgraph SecurityGroups["🔒 Security Groups"]
+            SG_ALB["SG-ALB<br/>Inbound: TCP 80, 443 (0.0.0.0/0)"]
+            SG_WEB["SG-WEB<br/>Inbound: TCP 80 (from SG-ALB)"]
+            SG_GAME["SG-GAME<br/>Inbound: UDP 30000 (0.0.0.0/0)"]
+        end
+
+        %% === Load Balancers ===
+        subgraph LoadBalancers["⚖️ Load Balancers"]
+            ALB["ALB - alb-luanti-web<br/>Layer 7 (HTTP/HTTPS)<br/>HTTPS:443 → Forward<br/>HTTP:80 → Redirect 301"]
+            NLB["NLB - nlb-luanti-game<br/>Layer 4 (TCP/UDP)<br/>UDP:30000 → Forward"]
+        end
+
+        %% === Target Groups ===
+        subgraph TargetGroups["🎯 Target Groups"]
+            TG_WEB["TG-WEB<br/>Protocol: HTTP | Port: 80<br/>Health: GET /health → 200<br/>Interval: 30s | Threshold: 3/3"]
+            TG_GAME["TG-GAME<br/>Protocol: UDP | Port: 30000<br/>Health: TCP:30000<br/>Interval: 30s | Threshold: 3/3"]
+        end
+
+        %% === Subnet AZ-1 ===
+        subgraph AZ1["📍 Subnet Pública AZ-1 (10.0.1.0/24)"]
+            subgraph ASG_WEB_AZ1["ASG-WEB"]
+                EC2_WEB_1["🖥️ EC2 Web<br/>Amazon Linux 2023<br/>Nginx (porta 80)<br/>Spot Instance"]
+            end
+            subgraph ASG_GAME_AZ1["ASG-GAME"]
+                EC2_GAME_1["🖥️ EC2 Game<br/>Amazon Linux 2023<br/>Docker + Luanti<br/>Spot Instance"]
+            end
+        end
+
+        %% === Subnet AZ-2 ===
+        subgraph AZ2["📍 Subnet Pública AZ-2 (10.0.2.0/24)"]
+            subgraph ASG_WEB_AZ2["ASG-WEB"]
+                EC2_WEB_2["🖥️ EC2 Web<br/>Amazon Linux 2023<br/>Nginx (porta 80)<br/>Spot Instance"]
+            end
+        end
+
+        %% === Auto Scaling Groups ===
+        subgraph AutoScaling["📈 Auto Scaling Groups"]
+            ASG_WEB_CFG["ASG-WEB<br/>Min: 1 | Desired: 1 | Max: 2<br/>Target Tracking: CPU 70%<br/>Cooldown: 300s"]
+            ASG_GAME_CFG["ASG-GAME<br/>Min: 1 | Desired: 1 | Max: 1<br/>Self-Healing Only"]
+        end
+    end
+
+    %% === CloudWatch e Monitoramento ===
+    subgraph Monitoring["📊 CloudWatch - Monitoramento"]
+        CW_METRICS["📈 Métricas<br/>CPUUtilization<br/>RequestCount<br/>TargetResponseTime<br/>ProcessedBytes<br/>ActiveFlowCount"]
+        CW_ALARMS["🚨 Alarmes<br/>CPU > 80% (3x60s)<br/>5XX > 10 (5min)"]
+        CW_LOGS["📋 Logs<br/>/var/log/messages<br/>Logs de Aplicação<br/>Retenção: 7 dias"]
+        SNS_TOPIC["📧 SNS Topic<br/>Notificações por Email"]
+    end
+
+    %% === Fluxo de Tráfego Web ===
+    USER_WEB -->|"HTTPS"| DNS_WEB
+    DNS_WEB -->|"Resolve"| ALB
+    ALB -->|"Forward HTTP:80"| TG_WEB
+    TG_WEB -->|"Route to healthy targets"| EC2_WEB_1
+    TG_WEB -->|"Route to healthy targets"| EC2_WEB_2
+
+    %% === Fluxo de Tráfego Game ===
+    USER_GAME -->|"UDP:30000"| DNS_GAME
+    DNS_GAME -->|"Resolve"| NLB
+    NLB -->|"Forward UDP:30000"| TG_GAME
+    TG_GAME -->|"Route to target"| EC2_GAME_1
+
+    %% === Internet Gateway ===
+    IGW --- ALB
+    IGW --- NLB
+
+    %% === Security Groups → Load Balancers ===
+    SG_ALB -.->|"Protege"| ALB
+    SG_WEB -.->|"Protege"| EC2_WEB_1
+    SG_WEB -.->|"Protege"| EC2_WEB_2
+    SG_GAME -.->|"Protege"| EC2_GAME_1
+
+    %% === Auto Scaling → Instâncias ===
+    ASG_WEB_CFG -->|"Gerencia"| EC2_WEB_1
+    ASG_WEB_CFG -->|"Gerencia"| EC2_WEB_2
+    ASG_GAME_CFG -->|"Gerencia"| EC2_GAME_1
+
+    %% === Monitoramento ===
+    EC2_WEB_1 -.->|"Métricas/Logs"| CW_METRICS
+    EC2_WEB_2 -.->|"Métricas/Logs"| CW_METRICS
+    EC2_GAME_1 -.->|"Métricas/Logs"| CW_METRICS
+    ALB -.->|"Métricas"| CW_METRICS
+    NLB -.->|"Métricas"| CW_METRICS
+    CW_METRICS --> CW_ALARMS
+    EC2_WEB_1 -.->|"Logs"| CW_LOGS
+    EC2_WEB_2 -.->|"Logs"| CW_LOGS
+    EC2_GAME_1 -.->|"Logs"| CW_LOGS
+    CW_ALARMS -->|"Notifica"| SNS_TOPIC

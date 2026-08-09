@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS Luanti ALB/NLB — Portal do Projeto</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>AWS Luanti ALB/NLB</h1>
+        <p>Arquitetura AWS com Application Load Balancer e Network Load Balancer para estudo e portfólio</p>
+    </header>
+
+    <main>
+        <section id="sobre">
+            <h2>Sobre o Projeto</h2>
+            <p>
+                Este projeto demonstra uma arquitetura completa na AWS utilizando Application Load Balancer (ALB)
+                e Network Load Balancer (NLB) para balanceamento de carga em diferentes camadas de rede.
+                O objetivo é ilustrar as diferenças entre Layer 7 (HTTP/HTTPS) e Layer 4 (TCP/UDP),
+                utilizando EC2 Spot Instances, Auto Scaling Groups, Target Groups e boas práticas de segurança e monitoramento.
+            </p>
+            <p>
+                A infraestrutura hospeda um portal web informativo (este site) acessado via ALB com HTTPS,
+                e um servidor de jogo Luanti acessado via NLB na porta UDP 30000. Toda a infraestrutura é criada
+                manualmente via Console AWS, com documentação passo a passo detalhada para cada recurso.
+            </p>
+        </section>
+
+        <section id="servidor">
+            <h2>Conectar ao Servidor de Jogo</h2>
+            <p>Para jogar no servidor Luanti hospedado nesta infraestrutura, utilize o endereço abaixo:</p>
+            <div class="server-address">
+                <code id="server-address">game.seudominio.com:30000</code>
+                <button id="copy-btn" type="button" aria-label="Copiar endereço do servidor">Copiar</button>
+                <span id="copy-feedback" class="copy-feedback" aria-live="polite" hidden>Copiado!</span>
+            </div>
+            <h3>Instruções de Conexão</h3>
+            <ol>
+                <li>Baixe e instale o <a href="https://www.luanti.org/" target="_blank" rel="noopener noreferrer">Luanti</a> (anteriormente Minetest).</li>
+                <li>Abra o Luanti e clique em <strong>Multiplayer</strong>.</li>
+                <li>No campo <strong>Endereço</strong>, insira: <code>game.seudominio.com</code></li>
+                <li>No campo <strong>Porta</strong>, insira: <code>30000</code></li>
+                <li>Escolha um nome de usuário e clique em <strong>Conectar</strong>.</li>
+            </ol>
+        </section>
+
+        <section id="arquitetura">
+            <h2>Diagrama de Arquitetura</h2>
+            <figure>
+                <img src="../diagrams/arquitetura.png"
+                     alt="Diagrama da arquitetura AWS do projeto mostrando o fluxo de tráfego: usuários acessam o portal web via Route 53 e ALB (HTTPS, Layer 7), enquanto jogadores conectam ao servidor Luanti via Route 53 e NLB (UDP, Layer 4). Ambos os fluxos passam por Target Groups e Auto Scaling Groups em duas Availability Zones dentro de uma VPC com subnets públicas."
+                     loading="lazy">
+                <figcaption>Arquitetura geral do projeto AWS Luanti ALB/NLB</figcaption>
+            </figure>
+        </section>
+
+        <section id="educacional">
+            <h2>Conceitos da Arquitetura</h2>
+
+            <section id="alb">
+                <h3>Application Load Balancer (ALB)</h3>
+                <p>
+                    O Application Load Balancer opera na Layer 7 (camada de aplicação) do modelo OSI,
+                    tomando decisões de roteamento com base no conteúdo das requisições HTTP/HTTPS.
+                    Ele suporta terminação TLS, roteamento baseado em path e host, e integração nativa
+                    com o AWS Certificate Manager (ACM). Neste projeto, o ALB recebe o tráfego web na
+                    porta 443 (HTTPS), realiza a terminação TLS e encaminha as requisições para as
+                    instâncias Nginx na porta 80 via Target Group.
+                </p>
+            </section>
+
+            <section id="nlb">
+                <h3>Network Load Balancer (NLB)</h3>
+                <p>
+                    O Network Load Balancer opera na Layer 4 (camada de transporte), lidando com
+                    conexões TCP e UDP sem inspecionar o conteúdo dos pacotes. Ele oferece latência
+                    ultra-baixa e preserva o IP de origem do cliente. Neste projeto, o NLB recebe o
+                    tráfego UDP na porta 30000 e o encaminha diretamente para a instância EC2 que
+                    executa o servidor Luanti via Docker, sem modificar os pacotes do protocolo do jogo.
+                </p>
+            </section>
+
+            <section id="spot">
+                <h3>Spot Instances</h3>
+                <p>
+                    EC2 Spot Instances são instâncias que utilizam capacidade ociosa da AWS com
+                    descontos de até 90% em relação ao preço On-Demand. Em contrapartida, a AWS pode
+                    interromper essas instâncias com um aviso de 2 minutos quando precisa recuperar a
+                    capacidade. Neste projeto, utilizamos múltiplos tipos de instância (t3.small,
+                    t3a.small, t2.small) para diversificação de capacidade e reduzir a probabilidade
+                    de interrupção simultânea, combinado com Auto Scaling para reposição automática.
+                </p>
+            </section>
+
+            <section id="autoscaling">
+                <h3>Auto Scaling</h3>
+                <p>
+                    Auto Scaling Groups (ASG) permitem ajustar automaticamente o número de instâncias
+                    EC2 com base em demanda ou métricas. O ASG do portal web utiliza uma política de
+                    Target Tracking que mantém a utilização média de CPU em 70%, escalando de 1 a 2
+                    instâncias conforme necessário. O ASG do servidor de jogo opera com capacidade fixa
+                    (min=1, max=1) para self-healing: se a instância falhar ou for interrompida pelo
+                    Spot, o ASG automaticamente provisiona uma nova instância em até 300 segundos.
+                </p>
+            </section>
+        </section>
+    </main>
+
+    <footer>
+        <p>Projeto AWS Luanti ALB/NLB — Laboratório de Estudo e Portfólio</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
