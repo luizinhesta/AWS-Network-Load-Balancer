@@ -207,13 +207,46 @@ O portal web é provisionado via User Data no Launch Template. Para publicar uma
 
 ---
 
-## Tecnologias Utilizadas
+## Serviços e Tecnologias Utilizadas
 
-- **AWS:** VPC, EC2, ALB, NLB, Auto Scaling, Route 53, ACM, CloudWatch, SNS, IAM
-- **Web:** HTML5, CSS3, JavaScript, Nginx
-- **Game:** Docker, Luanti (Minetest)
-- **Scripts:** Bash (User Data, validação)
-- **Documentação:** Markdown, Mermaid (diagramas)
+### Serviços AWS
+
+| Serviço | Função no Projeto |
+|---------|-------------------|
+| **VPC** | Rede virtual isolada (10.0.0.0/16) com 2 subnets públicas em AZs distintas, Internet Gateway e Route Table |
+| **EC2** | Instâncias de computação que hospedam o portal web (Nginx) e o servidor de jogo (Docker + Luanti) |
+| **EC2 Spot Instances** | Instâncias com até 70% de desconto, usando pool diversificado (t3.small, t3a.small, t2.small) para reduzir interrupções |
+| **Application Load Balancer (ALB)** | Balanceador Layer 7 que recebe tráfego HTTPS na porta 443, realiza terminação TLS com certificado ACM e distribui para instâncias web |
+| **Network Load Balancer (NLB)** | Balanceador Layer 4 que encaminha tráfego UDP na porta 30000 diretamente para o servidor de jogo, sem inspeção de conteúdo |
+| **Auto Scaling Groups** | Gerenciam capacidade: ASG-WEB escala de 1 a 2 instâncias com base em CPU (target 70%); ASG-GAME mantém exatamente 1 instância (self-healing) |
+| **Target Groups** | Registram instâncias e executam health checks: TG-WEB (HTTP /health) e TG-GAME (TCP porta 8080 via socat) |
+| **Route 53** | DNS gerenciado com Alias records apontando `www.dominio` para o ALB e `game.dominio` para o NLB |
+| **ACM (Certificate Manager)** | Certificado TLS gratuito com validação DNS, usado pelo ALB para terminação HTTPS |
+| **CloudWatch** | Coleta de métricas (CPU, memória, disco), logs de aplicação (Nginx, Docker) e alarmes com thresholds configuráveis |
+| **SNS (Simple Notification Service)** | Tópico que recebe alarmes do CloudWatch e envia notificações por email ao operador |
+| **IAM** | Roles e políticas de menor privilégio para instâncias EC2 (apenas PutMetricData e PutLogEvents no CloudWatch) |
+
+### Stack da Aplicação
+
+| Tecnologia | Função |
+|------------|--------|
+| **Nginx** | Servidor web nas instâncias do portal, servindo HTML/CSS/JS com endpoint `/health` para health checks |
+| **Docker** | Runtime do container Luanti nas instâncias de jogo (imagem `linuxserver/luanti:latest`) |
+| **Luanti (Minetest)** | Servidor de jogo open-source voxel, acessível via UDP na porta 30000 |
+| **HTML5 / CSS3 / JavaScript** | Portal web responsivo com informações do projeto e instruções de conexão ao servidor |
+| **Bash (User Data)** | Scripts de provisionamento automático executados no boot das instâncias EC2 (instalação de pacotes, deploy, health check) |
+| **socat** | Utilitário usado para criar um health check TCP dedicado na porta 8080 que valida se o container Luanti está rodando |
+
+### Conceitos Demonstrados
+
+- Diferença prática entre balanceamento Layer 4 (NLB/UDP) e Layer 7 (ALB/HTTPS)
+- Terminação TLS no load balancer com certificado ACM gratuito
+- Health checks customizados (HTTP path vs TCP port override para UDP)
+- Spot Instances com diversificação de pool e self-healing via Auto Scaling
+- Segurança com Security Groups referenciados por ID (sem abrir portas desnecessárias)
+- IAM com menor privilégio (roles específicas por função)
+- Observabilidade com CloudWatch Agent (métricas custom + logs centralizados)
+- Provisionamento imutável via User Data (instâncias descartáveis e reproduzíveis)
 
 ---
 
