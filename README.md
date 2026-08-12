@@ -24,8 +24,8 @@ Toda a infraestrutura é criada manualmente via Console AWS, sem uso de CloudFor
 
 | Item | Configuração |
 |------|-------------|
-| 🌐 Portal Web | `www.dev.inhesta.net` — HTTPS 443 |
-| 🎮 Servidor de Jogo | `game.dev.inhesta.net:30000` — UDP |
+| 🌐 Portal Web | `www.<SEU-DOMINIO>` — HTTPS 443 |
+| 🎮 Servidor de Jogo | `game.<SEU-DOMINIO>:30000` — UDP |
 | 🔗 Rede | VPC 10.0.0.0/16 |
 | 🏗️ Subnets | 2 públicas / 2 Availability Zones |
 | ⚙️ Provisionamento | Console AWS (manual, sem IaC) |
@@ -208,93 +208,3 @@ Jogador → Route 53 → NLB (UDP 30000) → TG-GAME → EC2 Spot / Docker / Lua
 
 ---
 
-## Instruções de Uso
-
-### Pré-requisitos
-
-- Conta AWS ativa com permissões administrativas
-- AWS CLI instalada e configurada localmente (`aws configure`)
-- Domínio registrado com Hosted Zone no Route 53
-- Certificado ACM validado para o domínio (validação DNS)
-- Git instalado para clonar o repositório
-
-### Implantação
-
-1. **Clone o repositório:**
-   ```bash
-   git clone https://github.com/seu-usuario/AWS-Luanti-NLB-ALB.git
-   cd AWS-Luanti-NLB-ALB
-   ```
-
-2. **Configure as variáveis de ambiente:**
-   ```bash
-   cp .env.example .env
-   # Edite .env com seus valores reais (região, domínio, conta AWS, etc.)
-   ```
-
-3. **Siga o guia de implantação:**
-   - Abra [IMPLANTACAO-AWS.md](IMPLANTACAO-AWS.md) e execute os 13 blocos sequencialmente no Console AWS
-   - Cada bloco contém instruções detalhadas, valores a preencher e checkpoints de validação
-
-4. **Execute os scripts de User Data:**
-   - Os scripts em `scripts/user-data-web.sh` e `scripts/user-data-game.sh` são colados no campo User Data dos Launch Templates durante a criação no Console
-
-### Atualização do Portal Web (Deploy de Novas Versões)
-
-1. **Atualize o User Data no Launch Template:**
-   - EC2 → Launch Templates → AWS-Luanti-NLB-ALB-Lab-LT-WEB
-   - Actions → Modify template (Create new version)
-   - Atualize o campo User Data com o novo `scripts/user-data-web.sh`
-   - Marque a nova versão como Default
-
-2. **Execute um Instance Refresh:**
-   - EC2 → Auto Scaling Groups → ASG-WEB
-   - Aba Instance refresh → Start instance refresh
-   - Minimum healthy percentage: `0%` (lab) ou `50%` (produção)
-
-3. **Aguarde a substituição** — O ASG termina instâncias antigas e lança novas com o User Data atualizado.
-
-> **Alternativa rápida**: Termine a instância manualmente. O ASG lança outra com o template mais recente.
-
-### Validação
-
-```bash
-curl -I https://www.SEU-DOMINIO          # Esperado: HTTP/2 200
-curl -I http://www.SEU-DOMINIO           # Esperado: 301 → HTTPS
-nslookup www.SEU-DOMINIO
-nslookup game.SEU-DOMINIO
-# Servidor de jogo: conecte via Luanti em game.SEU-DOMINIO:30000
-```
-
----
-
-## Custos Estimados
-
-| Recurso | Custo On-Demand (mensal) | Custo Spot (mensal) | Economia |
-|---------|--------------------------|---------------------|----------|
-| EC2 Web (t3.small) | ~$15.18 | ~$4.55 | ~70% |
-| EC2 Game (t3.small) | ~$15.18 | ~$4.55 | ~70% |
-| ALB | ~$16.43 | — | — |
-| NLB | ~$16.43 | — | — |
-| Route 53 | ~$0.50 | — | — |
-| ACM | Gratuito | — | — |
-| CloudWatch | ~$3.00 | — | — |
-| SNS | ~$0.00 | — | — |
-| **Total** | **~$66.72** | **~$45.46** | **~32%** |
-
-> Estimativas baseadas em us-east-1. Spot pode chegar a 70-90% de economia por instância.
-
----
-
-## Documentação Adicional
-
-| Documento | Descrição |
-|-----------|-----------|
-| [ARQUITETURA.md](ARQUITETURA.md) | Diagramas detalhados (topologia, tráfego, segurança, Auto Scaling, monitoramento) |
-| [IMPLANTACAO-AWS.md](IMPLANTACAO-AWS.md) | Guia passo a passo para criação de todos os recursos via Console AWS (13 blocos) |
-
----
-
-## Licença
-
-Este projeto é de uso educacional e para fins de portfólio.

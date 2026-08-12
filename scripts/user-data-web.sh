@@ -126,7 +126,7 @@ cat > /usr/share/nginx/html/index.html << 'INDEX_EOF'
             <h2>Conectar ao Servidor de Jogo</h2>
             <p>Para jogar no servidor Luanti hospedado nesta infraestrutura, utilize o endereço abaixo:</p>
             <div class="server-address">
-                <code id="server-addr">game.dev.inhesta.net:30000</code>
+                <code id="server-addr">game.<SEU-DOMINIO>:30000</code>
                 <button id="copy-btn" onclick="copyAddress()">Copiar</button>
                 <span id="copy-feedback" class="feedback hidden">Copiado!</span>
             </div>
@@ -151,7 +151,7 @@ cat > /usr/share/nginx/html/index.html << 'INDEX_EOF'
             <ol>
                 <li>Abra o <strong>Luanti</strong> pelo Menu Iniciar ou Área de Trabalho.</li>
                 <li>Clique na aba <strong>"Jogar Online"</strong>.</li>
-                <li>No campo <strong>Endereço</strong> (canto superior direito), digite: <code>game.dev.inhesta.net</code></li>
+                <li>No campo <strong>Endereço</strong> (canto superior direito), digite: <code>game.<SEU-DOMINIO></code></li>
                 <li>No campo <strong>Porta</strong>, mantenha: <code>30000</code></li>
                 <li>No campo <strong>Nome</strong>, escolha um nome de usuário (ex: seu nome).</li>
                 <li>O campo <strong>Senha</strong> pode ficar vazio.</li>
