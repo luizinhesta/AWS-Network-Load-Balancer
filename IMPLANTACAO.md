@@ -8,7 +8,6 @@
 
 ## Índice
 
-- [Pré-requisitos](#pré-requisitos)
 - [Bloco 1 — VPC e Rede](#bloco-1--vpc-e-rede)
 - [Bloco 2 — Security Groups](#bloco-2--security-groups)
 - [Bloco 3 — IAM Roles e Instance Profiles](#bloco-3--iam-roles-e-instance-profiles)
@@ -22,77 +21,10 @@
 - [Bloco 11 — CloudWatch Alarmes](#bloco-11--cloudwatch-alarmes)
 - [Bloco 12 — CloudWatch Logs](#bloco-12--cloudwatch-logs)
 - [Bloco 13 — SNS Topics](#bloco-13--sns-topics)
-- [Remoção dos Recursos (Ordem Reversa)](#remoção-dos-recursos-ordem-reversa)
-
----
-
-## Pré-requisitos
-
-Antes de iniciar a criação dos recursos, verifique que você possui todos os itens abaixo:
-
-### 1. Conta AWS Ativa
-
-- Conta AWS ativa com acesso ao Console de Gerenciamento.
-- Faturamento habilitado (alguns recursos podem gerar custos, mesmo que mínimos).
-- Verifique que a conta não está em período de suspensão ou com restrições ativas.
-
-### 2. AWS CLI Configurada
-
-- AWS CLI v2 instalada localmente para comandos de validação.
-- Perfil configurado com `aws configure` (Access Key ID, Secret Access Key, região padrão).
-- Teste de conectividade: execute `aws sts get-caller-identity` e confirme que retorna o Account ID correto.
-
-### 3. Domínio Registrado
-
-- Domínio registrado e com Hosted Zone criada no Route 53.
-- Anote o **Hosted Zone ID** (será necessário nos blocos de DNS e certificado).
-- O domínio deve estar resolvendo (NS records propagados).
-
-### 4. Permissões IAM do Operador
-
-O usuário ou role IAM utilizado para criar os recursos deve possuir, no mínimo, as seguintes permissões:
-
-- `ec2:*` — Criação de VPC, Subnets, Security Groups, Launch Templates, instâncias.
-- `elasticloadbalancing:*` — Criação e configuração de ALB, NLB, Target Groups, Listeners.
-- `autoscaling:*` — Criação e configuração de Auto Scaling Groups.
-- `iam:*` — Criação de Roles, Policies, Instance Profiles.
-- `route53:*` — Criação de records DNS.
-- `acm:*` — Solicitação e validação de certificados.
-- `cloudwatch:*` — Criação de alarmes e dashboards.
-- `logs:*` — Criação de Log Groups.
-- `sns:*` — Criação de tópicos e subscriptions.
-
-> **Recomendação**: Para um ambiente de laboratório, utilize um usuário com a policy `AdministratorAccess`. Em produção, refine para o menor privilégio.
-
-### 5. Informações a Coletar Previamente
-
-Preencha os valores no arquivo `.env.example` antes de iniciar:
-
-| Variável | Descrição | Exemplo |
-|----------|-----------|---------|
-| `AWS_REGION` | Região AWS de implantação | `us-east-1` |
-| `DOMAIN_NAME` | Domínio registrado | `meudominio.com` |
-| `HOSTED_ZONE_ID` | ID da Hosted Zone no Route 53 | `Z0123456789ABCDEF` |
-| `AWS_ACCOUNT_ID` | ID numérico da conta AWS (12 dígitos) | `123456789012` |
-| `SSH_MY_IP` | IP público do operador (formato CIDR /32) | `203.0.113.50/32` |
-| `SNS_EMAIL` | Email para notificações CloudWatch | `admin@empresa.com` |
-
-### 6. Região AWS
-
-- Defina a região **antes** de começar e mantenha-a consistente durante toda a implantação.
-- Verifique no canto superior direito do Console que a região ativa é a desejada.
-- Todas as instruções deste guia assumem que você está operando na mesma região.
-
-### 7. Tags Padrão (Opcional)
-
-Para facilitar a identificação e organização dos recursos, considere adicionar a tag `Project=AWS-Luanti-NLB-ALB` nos recursos principais (VPC, Security Groups). Tags não são obrigatórias para o funcionamento da infraestrutura.
 
 ---
 
 ## Bloco 1 — VPC e Rede
-
-> **Objetivo**: Criar a base de rede com VPC, subnets públicas em duas AZs, Internet Gateway e Route Table.
-> **Tempo estimado**: 15–20 minutos.
 
 ---
 
@@ -109,18 +41,10 @@ Para facilitar a identificação e organização dos recursos, considere adicion
 | **IPv6 CIDR block** | No IPv6 CIDR block |
 | **Tenancy** | Default |
 
-4. Na seção **Tags**, adicione:
-
-| Key | Value |
-|-----|-------|
-| `Project` | `AWS-Luanti-NLB-ALB` |
-| `Environment` | `Lab` |
-| `ManagedBy` | `Console` |
-
-5. Clique em **Create VPC**.
+4. Clique em **Create VPC**.
 6. Anote o **VPC ID** gerado (formato: `vpc-xxxxxxxxxxxxxxxxx`).
 
-
+![Objeto](imagens/imagem(33).png)
 
 ---
 
@@ -136,18 +60,8 @@ Para facilitar a identificação e organização dos recursos, considere adicion
 | **Availability Zone** | Selecione a **primeira AZ** disponível (ex: `us-east-1a`) |
 | **IPv4 subnet CIDR block** | `10.0.1.0/24` |
 
-3. Na seção **Tags**, adicione:
-
-| Key | Value |
-|-----|-------|
-| `Project` | `AWS-Luanti-NLB-ALB` |
-| `Environment` | `Lab` |
-| `ManagedBy` | `Console` |
-
-4. Clique em **Create subnet**.
-5. Anote o **Subnet ID** gerado.
-
-
+3. Clique em **Create subnet**.
+4. Anote o **Subnet ID** gerado.
 
 ---
 
@@ -163,18 +77,10 @@ Para facilitar a identificação e organização dos recursos, considere adicion
 | **Availability Zone** | Selecione a **segunda AZ** disponível (ex: `us-east-1b`) |
 | **IPv4 subnet CIDR block** | `10.0.2.0/24` |
 
-3. Na seção **Tags**, adicione:
+3. Clique em **Create subnet**.
+4. Anote o **Subnet ID** gerado.
 
-| Key | Value |
-|-----|-------|
-| `Project` | `AWS-Luanti-NLB-ALB` |
-| `Environment` | `Lab` |
-| `ManagedBy` | `Console` |
-
-4. Clique em **Create subnet**.
-5. Anote o **Subnet ID** gerado.
-
-
+![Objeto](imagens/imagem(47).png)
 
 ---
 
@@ -189,8 +95,6 @@ Para **cada uma** das duas subnets criadas:
 5. Clique em **Save**.
 6. Repita para a segunda subnet (`AWS-Luanti-NLB-ALB-Lab-PublicSubnet-AZ2`).
 
-
-
 ---
 
 ### 1.5 Criar Internet Gateway
@@ -202,20 +106,12 @@ Para **cada uma** das duas subnets criadas:
 |-------|-------|
 | **Name tag** | `AWS-Luanti-NLB-ALB-Lab-IGW` |
 
-3. Na seção **Tags**, adicione:
-
-| Key | Value |
-|-----|-------|
-| `Project` | `AWS-Luanti-NLB-ALB` |
-| `Environment` | `Lab` |
-| `ManagedBy` | `Console` |
-
-4. Clique em **Create internet gateway**.
-5. Na tela de confirmação, clique em **Attach to VPC**.
+3. Clique em **Create internet gateway**.
+4. Na tela de confirmação, clique em **Attach to VPC**.
 6. Selecione `AWS-Luanti-NLB-ALB-Lab-VPC`.
 7. Clique em **Attach internet gateway**.
 
-
+![Objeto](imagens/imagem(49).png)
 
 ---
 
@@ -229,15 +125,9 @@ Para **cada uma** das duas subnets criadas:
 | **Name tag** | `AWS-Luanti-NLB-ALB-Lab-PublicRT` |
 | **VPC** | Selecione `AWS-Luanti-NLB-ALB-Lab-VPC` |
 
-3. Na seção **Tags**, adicione:
+3. Clique em **Create route table**.
 
-| Key | Value |
-|-----|-------|
-| `Project` | `AWS-Luanti-NLB-ALB` |
-| `Environment` | `Lab` |
-| `ManagedBy` | `Console` |
-
-4. Clique em **Create route table**.
+![Objeto](imagens/imagem(48).png)
 
 ---
 
@@ -254,8 +144,6 @@ Para **cada uma** das duas subnets criadas:
 
 4. Clique em **Save changes**.
 
-
-
 ---
 
 ### 1.8 Associar Route Table às Subnets Públicas
@@ -267,18 +155,11 @@ Para **cada uma** das duas subnets criadas:
    - `AWS-Luanti-NLB-ALB-Lab-PublicSubnet-AZ2`
 4. Clique em **Save associations**.
 
-
-
----
+![Objeto](imagens/imagem(50).png)
 
 ---
-
 
 ## Bloco 2 — Security Groups
-
-> **Objetivo**: Criar os Security Groups com regras de menor privilégio para ALB, instâncias web e instâncias de jogo.
-> **Tempo estimado**: 10–15 minutos.
-> **Dependência**: Bloco 1 (VPC deve existir).
 
 ---
 
@@ -306,19 +187,8 @@ Para **cada uma** das duas subnets criadas:
 |------|----------|------------|-------------|
 | All traffic | All | All | `0.0.0.0/0` |
 
-5. Na seção **Tags**, adicione:
-
-| Key | Value |
-|-----|-------|
-| `Project` | `AWS-Luanti-NLB-ALB` |
-| `Environment` | `Lab` |
-| `ManagedBy` | `Console` |
-| `Name` | `SG-ALB` |
-
-6. Clique em **Create security group**.
-7. Anote o **Security Group ID** (formato: `sg-xxxxxxxxxxxxxxxxx`).
-
-
+5. Clique em **Create security group**.
+6. Anote o **Security Group ID** (formato: `sg-xxxxxxxxxxxxxxxxx`).
 
 ---
 
@@ -343,19 +213,8 @@ Para **cada uma** das duas subnets criadas:
 
 4. Em **Outbound rules**, mantenha a regra padrão (All traffic → 0.0.0.0/0).
 
-5. Na seção **Tags**, adicione:
-
-| Key | Value |
-|-----|-------|
-| `Project` | `AWS-Luanti-NLB-ALB` |
-| `Environment` | `Lab` |
-| `ManagedBy` | `Console` |
-| `Name` | `SG-WEB` |
-
-6. Clique em **Create security group**.
-7. Anote o **Security Group ID**.
-
-
+5. Clique em **Create security group**.
+6. Anote o **Security Group ID**.
 
 ---
 
@@ -379,19 +238,8 @@ Para **cada uma** das duas subnets criadas:
 
 4. Em **Outbound rules**, mantenha a regra padrão (All traffic → 0.0.0.0/0).
 
-5. Na seção **Tags**, adicione:
-
-| Key | Value |
-|-----|-------|
-| `Project` | `AWS-Luanti-NLB-ALB` |
-| `Environment` | `Lab` |
-| `ManagedBy` | `Console` |
-| `Name` | `SG-GAME` |
-
-6. Clique em **Create security group**.
-7. Anote o **Security Group ID**.
-
-
+5. Clique em **Create security group**.
+6. Anote o **Security Group ID**.
 
 ---
 
@@ -412,18 +260,11 @@ Se você necessita de acesso SSH para debugging, adicione esta regra aos Securit
 4. Clique em **Save rules**.
 5. Repita para o outro Security Group, se necessário.
 
-
-
----
+![Objeto](imagens/imagem(45).png)
 
 ---
-
 
 ## Bloco 3 — IAM Roles e Instance Profiles
-
-> **Objetivo**: Criar IAM Roles com menor privilégio para instâncias web e de jogo, permitindo publicação de métricas e logs no CloudWatch.
-> **Tempo estimado**: 15–20 minutos.
-> **Dependência**: Nenhuma (pode ser feito em paralelo ao Bloco 1).
 
 ---
 
@@ -442,17 +283,7 @@ Se você necessita de acesso SSH para debugging, adicione esta regra aos Securit
 | **Role name** | `AWS-Luanti-NLB-ALB-Lab-WebRole` |
 | **Description** | `IAM Role para instâncias web do projeto AWS Luanti - CloudWatch Logs e Metrics` |
 
-8. Na seção **Tags**, adicione:
-
-| Key | Value |
-|-----|-------|
-| `Project` | `AWS-Luanti-NLB-ALB` |
-| `Environment` | `Lab` |
-| `ManagedBy` | `Console` |
-
-9. Clique em **Create role**.
-
-
+8. Clique em **Create role**.
 
 ---
 
@@ -509,16 +340,9 @@ Se você necessita de acesso SSH para debugging, adicione esta regra aos Securit
 | **Policy name** | `AWS-Luanti-NLB-ALB-Lab-WebPolicy` |
 | **Description** | `Política de menor privilégio para instâncias web - CloudWatch Logs e Metrics` |
 
-6. Na seção **Tags**, adicione:
+6. Clique em **Create policy**.
 
-| Key | Value |
-|-----|-------|
-| `Project` | `AWS-Luanti-NLB-ALB` |
-| `Environment` | `Lab` |
-
-7. Clique em **Create policy**.
-
-
+![Objeto](imagens/imagem(46).png)
 
 ---
 
@@ -529,7 +353,7 @@ Se você necessita de acesso SSH para debugging, adicione esta regra aos Securit
 3. Pesquise por `AWS-Luanti-NLB-ALB-Lab-WebPolicy`.
 4. Marque a policy e clique em **Add permissions**.
 
-
+![Objeto](imagens/imagem(51).png)
 
 ---
 
@@ -548,17 +372,7 @@ Se você necessita de acesso SSH para debugging, adicione esta regra aos Securit
 | **Role name** | `AWS-Luanti-NLB-ALB-Lab-GameRole` |
 | **Description** | `IAM Role para instâncias de jogo do projeto AWS Luanti - CloudWatch Logs e Metrics` |
 
-8. Na seção **Tags**, adicione:
-
-| Key | Value |
-|-----|-------|
-| `Project` | `AWS-Luanti-NLB-ALB` |
-| `Environment` | `Lab` |
-| `ManagedBy` | `Console` |
-
-9. Clique em **Create role**.
-
-
+8. Clique em **Create role**.
 
 ---
 
@@ -615,16 +429,9 @@ Se você necessita de acesso SSH para debugging, adicione esta regra aos Securit
 | **Policy name** | `AWS-Luanti-NLB-ALB-Lab-GamePolicy` |
 | **Description** | `Política de menor privilégio para instâncias de jogo - CloudWatch Logs e Metrics` |
 
-6. Na seção **Tags**, adicione:
+6. Clique em **Create policy**.
 
-| Key | Value |
-|-----|-------|
-| `Project` | `AWS-Luanti-NLB-ALB` |
-| `Environment` | `Lab` |
-
-7. Clique em **Create policy**.
-
-
+![Objeto](imagens/imagem(51).png)
 
 ---
 
@@ -635,13 +442,10 @@ Se você necessita de acesso SSH para debugging, adicione esta regra aos Securit
 3. Pesquise por `AWS-Luanti-NLB-ALB-Lab-GamePolicy`.
 4. Marque a policy e clique em **Add permissions**.
 
-
-
 ---
 
 ### 3.7 Verificar Instance Profiles (Criados Automaticamente)
 
-> **Nota**: Quando uma IAM Role é criada via Console com EC2 como trusted entity, o AWS cria automaticamente um Instance Profile com o mesmo nome da Role. Verifique se ambos existem:
 
 ```bash
 # Verificar Instance Profile da WebRole
@@ -675,14 +479,7 @@ aws iam add-role-to-instance-profile \
 
 ---
 
----
-
-
 ## Bloco 4 — Launch Templates
-
-> **Objetivo**: Criar Launch Templates para instâncias web e de jogo com Amazon Linux 2023, Spot Instances, múltiplos tipos de instância e User Data para provisionamento automático.
-> **Tempo estimado**: 15–20 minutos.
-> **Dependências**: Bloco 2 (Security Groups) e Bloco 3 (IAM Roles/Instance Profiles).
 
 ---
 
@@ -762,13 +559,10 @@ O script realiza as seguintes operações:
 
 4. Clique em **Create launch template**.
 
-
-
 ---
 
 ### 4.2 Configuração de Múltiplos Tipos de Instância (LT-WEB)
 
-> **Nota**: A configuração de múltiplos tipos de instância (t3.small, t3a.small, t2.small) será definida no **Auto Scaling Group** (Bloco 8), utilizando **Mixed Instances Policy**. O Launch Template define o tipo primário (t3.small), e o ASG adiciona as alternativas para diversificação de capacidade Spot.
 
 Tipos de instância configurados para o pool web:
 
@@ -858,13 +652,10 @@ O script realiza as seguintes operações:
 
 4. Clique em **Create launch template**.
 
-
-
 ---
 
 ### 4.4 Configuração de Múltiplos Tipos de Instância (LT-GAME)
 
-> **Nota**: Assim como no LT-WEB, a diversificação de tipos será configurada no **Auto Scaling Group** (Bloco 8).
 
 Tipos de instância configurados para o pool de jogo:
 
@@ -873,6 +664,9 @@ Tipos de instância configurados para o pool de jogo:
 | `t3.small` | 2 | 2 GB | Nitro (primário) |
 | `t3a.small` | 2 | 2 GB | Nitro AMD |
 | `t2.small` | 1 | 2 GB | Legado |
+
+![Objeto](imagens/imagem(35).png)
+![Objeto](imagens/imagem(34).png)
 
 ---
 
@@ -885,14 +679,9 @@ Tipos de instância configurados para o pool de jogo:
 
 ---
 
----
-
-
 ## Bloco 5 — Target Groups
 
-> **Objetivo**: Criar os Target Groups para roteamento de tráfego do ALB (web) e do NLB (jogo), com health checks configurados.
-> **Tempo estimado**: 10–15 minutos.
-> **Dependência**: Bloco 1 (VPC deve existir).
+![Objeto](imagens/imagem(39).png)
 
 ---
 
@@ -928,19 +717,11 @@ Tipos de instância configurados para o pool de jogo:
 | **Interval** | `30` segundos |
 | **Success codes** | `200` |
 
-6. Na seção **Tags**, adicione:
-
-| Key | Value |
-|-----|-------|
-| `Project` | `AWS-Luanti-NLB-ALB` |
-| `Environment` | `Lab` |
-| `ManagedBy` | `Console` |
-
-7. Clique em **Next**.
+6. Clique em **Next**.
 8. Na tela **Register targets**, **não registre targets agora** (o ASG fará isso automaticamente no Bloco 8).
 9. Clique em **Create target group**.
 
-
+![Objeto](imagens/imagem(41).png)
 
 ---
 
@@ -975,19 +756,11 @@ Tipos de instância configurados para o pool de jogo:
 | **Timeout** | `10` segundos |
 | **Interval** | `30` segundos |
 
-6. Na seção **Tags**, adicione:
-
-| Key | Value |
-|-----|-------|
-| `Project` | `AWS-Luanti-NLB-ALB` |
-| `Environment` | `Lab` |
-| `ManagedBy` | `Console` |
-
-7. Clique em **Next**.
-8. Na tela **Register targets**, **não registre targets agora** (o ASG fará isso automaticamente no Bloco 8).
+6. Clique em **Next**.
+7. Na tela **Register targets**, **não registre targets agora** (o ASG fará isso automaticamente no Bloco 8).
 9. Clique em **Create target group**.
 
-
+![Objeto](imagens/imagem(40).png)
 
 ---
 
@@ -1000,45 +773,11 @@ Tipos de instância configurados para o pool de jogo:
 
 ---
 
-### 5.4 Checkpoint de Validação — Bloco 5
-
-```bash
-# Listar Target Groups do projeto
-aws elbv2 describe-target-groups \
-  --query "TargetGroups[?contains(TargetGroupName, 'TG-')].{Name:TargetGroupName,Protocol:Protocol,Port:Port,VPC:VpcId,HealthCheck:HealthCheckProtocol}" \
-  --output table
-
-# Verificar health check do TG-WEB
-aws elbv2 describe-target-groups \
-  --names TG-WEB \
-  --query "TargetGroups[0].{Protocol:Protocol,Port:Port,HCProtocol:HealthCheckProtocol,HCPath:HealthCheckPath,HCInterval:HealthCheckIntervalSeconds,HealthyThreshold:HealthyThresholdCount,UnhealthyThreshold:UnhealthyThresholdCount}" \
-  --output table
-
-# Verificar health check do TG-GAME
-aws elbv2 describe-target-groups \
-  --names TG-GAME \
-  --query "TargetGroups[0].{Protocol:Protocol,Port:Port,HCProtocol:HealthCheckProtocol,HCPort:HealthCheckPort,HCInterval:HealthCheckIntervalSeconds,HealthyThreshold:HealthyThresholdCount,UnhealthyThreshold:UnhealthyThresholdCount}" \
-  --output table
-```
-
-**Critérios de sucesso:**
-
-- ✅ `TG-WEB` com protocolo HTTP, porta 80, health check HTTP em `/health`
-- ✅ `TG-GAME` com protocolo UDP, porta 30000, health check TCP na porta 30000
-- ✅ Ambos com intervalo de 30s e threshold 3/3
-- ✅ Ambos associados à VPC `AWS-Luanti-NLB-ALB-Lab-VPC`
-- ✅ Nenhum target registrado ainda (será feito pelo ASG)
-
----
-
-
 ## Bloco 6 — Application Load Balancer (ALB)
 
-> **Objetivo**: Criar o ALB com listeners HTTP (redirect para HTTPS) e HTTPS (forward para TG-WEB), utilizando certificado ACM.
-> **Tempo estimado**: 15–20 minutos.
-> **Dependências**: Bloco 2 (SG-ALB), Bloco 5 (TG-WEB), Bloco 10 (Certificado ACM validado).
-
 > ⚠️ **Pré-requisito obrigatório**: O certificado ACM deve estar no estado **"Issued"** antes de configurar o listener HTTPS. Se o certificado ainda não foi criado/validado, execute primeiro o [Bloco 10 — Certificado ACM](#bloco-10--certificado-acm) e retorne a este bloco após a validação.
+
+![Objeto](imagens/imagem(36).png)
 
 ---
 
@@ -1104,19 +843,9 @@ Configure o primeiro listener (HTTP):
 > - O certificado está no estado **"Issued"** (validação DNS concluída).
 > - Consulte o [Bloco 10](#bloco-10--certificado-acm) para instruções de criação e validação.
 
-5. Na seção **Tags**, adicione:
-
-| Key | Value |
-|-----|-------|
-| `Project` | `AWS-Luanti-NLB-ALB` |
-| `Environment` | `Lab` |
-| `ManagedBy` | `Console` |
-
-6. Revise o **Summary** e clique em **Create load balancer**.
+5. Revise o **Summary** e clique em **Create load balancer**.
 7. Aguarde o estado mudar para **Active** (pode levar 2–3 minutos).
 8. Anote o **DNS name** do ALB (formato: `alb-luanti-web-XXXXXXXXX.<region>.elb.amazonaws.com`).
-
-
 
 ---
 
@@ -1133,56 +862,9 @@ Após a criação, confirme os listeners:
 | HTTP | 80 | Redirect para `HTTPS:443` (301) |
 | HTTPS | 443 | Forward para `TG-WEB` |
 
-
-
 ---
-
-### 6.3 Checkpoint de Validação — Bloco 6
-
-```bash
-# Verificar ALB criado
-aws elbv2 describe-load-balancers \
-  --names alb-luanti-web \
-  --query "LoadBalancers[0].{Name:LoadBalancerName,DNS:DNSName,State:State.Code,Type:Type,Scheme:Scheme,AZs:AvailabilityZones[*].ZoneName}" \
-  --output table
-
-# Verificar listeners do ALB
-aws elbv2 describe-listeners \
-  --load-balancer-arn $(aws elbv2 describe-load-balancers --names alb-luanti-web --query "LoadBalancers[0].LoadBalancerArn" --output text) \
-  --query "Listeners[*].{Port:Port,Protocol:Protocol,DefaultAction:DefaultActions[0].Type}" \
-  --output table
-
-# Verificar Security Groups associados ao ALB
-aws elbv2 describe-load-balancers \
-  --names alb-luanti-web \
-  --query "LoadBalancers[0].SecurityGroups" \
-  --output table
-
-# Verificar certificado no listener HTTPS
-aws elbv2 describe-listener-certificates \
-  --listener-arn $(aws elbv2 describe-listeners --load-balancer-arn $(aws elbv2 describe-load-balancers --names alb-luanti-web --query "LoadBalancers[0].LoadBalancerArn" --output text) --query "Listeners[?Port==\`443\`].ListenerArn" --output text) \
-  --query "Certificates[*].CertificateArn" \
-  --output text
-```
-
-**Critérios de sucesso:**
-
-- ✅ ALB `alb-luanti-web` com estado `active` e scheme `internet-facing`
-- ✅ ALB distribuído em 2 Availability Zones
-- ✅ Listener HTTP:80 com ação `redirect` (301 para HTTPS:443)
-- ✅ Listener HTTPS:443 com ação `forward` para `TG-WEB`
-- ✅ Certificado ACM associado ao listener HTTPS
-- ✅ Security Group `SG-ALB` associado ao ALB
-- ✅ Tags `Project` e `Environment` aplicadas
-
----
-
 
 ## Bloco 7 — Network Load Balancer (NLB)
-
-> **Objetivo**: Criar o NLB para tráfego UDP do servidor de jogo Luanti, com listener na porta 30000.
-> **Tempo estimado**: 10–15 minutos.
-> **Dependências**: Bloco 1 (VPC e Subnets), Bloco 5 (TG-GAME).
 
 ---
 
@@ -1209,7 +891,6 @@ aws elbv2 describe-listener-certificates \
 | | `AWS-Luanti-NLB-ALB-Lab-PublicSubnet-AZ1` |
 | | `AWS-Luanti-NLB-ALB-Lab-PublicSubnet-AZ2` |
 
-> **Nota**: O NLB não utiliza Security Groups. O controle de acesso é feito no Security Group das instâncias de destino (`SG-GAME`).
 
 #### Listeners and routing
 
@@ -1219,19 +900,9 @@ aws elbv2 describe-listener-certificates \
 | **Port** | `30000` |
 | **Default action** | `Forward to` → Selecione `TG-GAME` |
 
-4. Na seção **Tags**, adicione:
-
-| Key | Value |
-|-----|-------|
-| `Project` | `AWS-Luanti-NLB-ALB` |
-| `Environment` | `Lab` |
-| `ManagedBy` | `Console` |
-
-5. Revise o **Summary** e clique em **Create load balancer**.
+4. Revise o **Summary** e clique em **Create load balancer**.
 6. Aguarde o estado mudar para **Active** (pode levar 2–3 minutos).
 7. Anote o **DNS name** do NLB (formato: `nlb-luanti-game-XXXXXXXXX.<region>.elb.amazonaws.com`).
-
-> 📸 **Screenshot placeholder**: _Captura do NLB criado com listener UDP:30000 e estado Active._
 
 ---
 
@@ -1245,48 +916,11 @@ aws elbv2 describe-listener-certificates \
 |----------|-----------|-------|------|
 | UDP | UDP | 30000 | Forward para `TG-GAME` |
 
-> 📸 **Screenshot placeholder**: _Captura do listener UDP:30000 no NLB._
-
 ---
-
-### 7.3 Checkpoint de Validação — Bloco 7
-
-```bash
-# Verificar NLB criado
-aws elbv2 describe-load-balancers \
-  --names nlb-luanti-game \
-  --query "LoadBalancers[0].{Name:LoadBalancerName,DNS:DNSName,State:State.Code,Type:Type,Scheme:Scheme,AZs:AvailabilityZones[*].ZoneName}" \
-  --output table
-
-# Verificar listener do NLB
-aws elbv2 describe-listeners \
-  --load-balancer-arn $(aws elbv2 describe-load-balancers --names nlb-luanti-game --query "LoadBalancers[0].LoadBalancerArn" --output text) \
-  --query "Listeners[*].{Port:Port,Protocol:Protocol,DefaultAction:DefaultActions[0].Type,TargetGroup:DefaultActions[0].TargetGroupArn}" \
-  --output table
-
-# Verificar que o NLB está nas 2 AZs
-aws elbv2 describe-load-balancers \
-  --names nlb-luanti-game \
-  --query "LoadBalancers[0].AvailabilityZones[*].{Zone:ZoneName,Subnet:SubnetId}" \
-  --output table
-```
-
-**Critérios de sucesso:**
-
-- ✅ NLB `nlb-luanti-game` com estado `active` e scheme `internet-facing`
-- ✅ NLB do tipo `network`
-- ✅ NLB distribuído em 2 Availability Zones
-- ✅ Listener UDP:30000 com ação `forward` para `TG-GAME`
-- ✅ Tags `Project` e `Environment` aplicadas
-
----
-
 
 ## Bloco 8 — Auto Scaling Groups
 
-> **Objetivo**: Criar os Auto Scaling Groups para instâncias web (com scaling por CPU) e de jogo (self-healing), registrando-os nos respectivos Target Groups.
-> **Tempo estimado**: 20–25 minutos.
-> **Dependências**: Bloco 4 (Launch Templates), Bloco 5 (Target Groups), Bloco 6 (ALB), Bloco 7 (NLB).
+![Objeto](imagens/imagem(42).png)
 
 ---
 
@@ -1379,7 +1013,7 @@ Adicione as tags que serão aplicadas às instâncias criadas pelo ASG:
 
 7. Clique em **Next**, revise o resumo e clique em **Create Auto Scaling group**.
 
-> 📸 **Screenshot placeholder**: _Captura do ASG-WEB criado com capacidade 1/1/2 e Target Tracking policy._
+![Objeto](imagens/imagem(44).png)
 
 ---
 
@@ -1461,7 +1095,7 @@ Em **Scaling policies**, selecione **None** (não é necessária política de es
 
 7. Clique em **Next**, revise o resumo e clique em **Create Auto Scaling group**.
 
-> 📸 **Screenshot placeholder**: _Captura do ASG-GAME criado com capacidade 1/1/1 (self-healing)._
+![Objeto](imagens/imagem(43).png)
 
 ---
 
@@ -1481,55 +1115,7 @@ Em **Scaling policies**, selecione **None** (não é necessária política de es
 
 ---
 
-### 8.4 Checkpoint de Validação — Bloco 8
-
-```bash
-# Listar Auto Scaling Groups do projeto
-aws autoscaling describe-auto-scaling-groups \
-  --query "AutoScalingGroups[?contains(AutoScalingGroupName, 'ASG-')].{Name:AutoScalingGroupName,Min:MinSize,Desired:DesiredCapacity,Max:MaxSize,AZs:AvailabilityZones,TG:TargetGroupARNs[0],HealthCheck:HealthCheckType,Grace:HealthCheckGracePeriod}" \
-  --output table
-
-# Verificar política de scaling do ASG-WEB
-aws autoscaling describe-policies \
-  --auto-scaling-group-name ASG-WEB \
-  --query "ScalingPolicies[*].{Name:PolicyName,Type:PolicyType,Metric:TargetTrackingConfiguration.PredefinedMetricSpecification.PredefinedMetricType,Target:TargetTrackingConfiguration.TargetValue}" \
-  --output table
-
-# Verificar instâncias ativas nos ASGs
-aws autoscaling describe-auto-scaling-instances \
-  --query "AutoScalingInstances[?contains(AutoScalingGroupName, 'ASG-')].{ID:InstanceId,ASG:AutoScalingGroupName,AZ:AvailabilityZone,State:LifecycleState,Health:HealthStatus}" \
-  --output table
-
-# Verificar registro nos Target Groups
-aws elbv2 describe-target-health \
-  --target-group-arn $(aws elbv2 describe-target-groups --names TG-WEB --query "TargetGroups[0].TargetGroupArn" --output text) \
-  --query "TargetHealthDescriptions[*].{Target:Target.Id,Port:Target.Port,Health:TargetHealth.State}" \
-  --output table
-
-aws elbv2 describe-target-health \
-  --target-group-arn $(aws elbv2 describe-target-groups --names TG-GAME --query "TargetGroups[0].TargetGroupArn" --output text) \
-  --query "TargetHealthDescriptions[*].{Target:Target.Id,Port:Target.Port,Health:TargetHealth.State}" \
-  --output table
-```
-
-**Critérios de sucesso:**
-
-- ✅ `ASG-WEB` com min=1, desired=1, max=2 em 2 AZs
-- ✅ `ASG-GAME` com min=1, desired=1, max=1 em 2 AZs
-- ✅ Ambos com health check tipo `ELB` e grace period `300`
-- ✅ `ASG-WEB` com Target Tracking policy (CPU 70%)
-- ✅ `ASG-WEB` registrado no `TG-WEB`, `ASG-GAME` registrado no `TG-GAME`
-- ✅ Instâncias em estado `InService` após provisionamento
-- ✅ Targets com estado `healthy` nos Target Groups (após grace period)
-
----
-
-
 ## Bloco 9 — DNS Route 53
-
-> **Objetivo**: Criar registros DNS Alias A para direcionar tráfego web (www.DOMAIN) ao ALB e tráfego de jogo (game.DOMAIN) ao NLB.
-> **Tempo estimado**: 10–15 minutos.
-> **Dependências**: Bloco 6 (ALB ativo), Bloco 7 (NLB ativo), Hosted Zone existente no Route 53.
 
 > ⚠️ **Pré-requisitos**:
 > - Domínio registrado com Hosted Zone criada no Route 53.
@@ -1566,11 +1152,8 @@ aws elbv2 describe-target-health \
 | **Routing policy** | `Simple routing` |
 | **Evaluate target health** | ✅ `Yes` |
 
-> **Nota**: A opção **Evaluate target health** permite que o Route 53 verifique a saúde do ALB antes de direcionar tráfego. Se o ALB estiver unhealthy, o Route 53 não retornará o registro.
 
 6. Clique em **Create records**.
-
-> 📸 **Screenshot placeholder**: _Captura do registro A Alias www.DOMAIN apontando para o ALB._
 
 ---
 
@@ -1602,8 +1185,6 @@ aws elbv2 describe-target-health \
 
 5. Clique em **Create records**.
 
-> 📸 **Screenshot placeholder**: _Captura do registro A Alias game.DOMAIN apontando para o NLB._
-
 ---
 
 ### 9.3 Resumo dos Registros DNS
@@ -1619,46 +1200,7 @@ aws elbv2 describe-target-health \
 
 ---
 
-### 9.4 Checkpoint de Validação — Bloco 9
-
-```bash
-# Listar records da Hosted Zone (substitua <HOSTED_ZONE_ID> pelo valor real)
-aws route53 list-resource-record-sets \
-  --hosted-zone-id <HOSTED_ZONE_ID> \
-  --query "ResourceRecordSets[?Type=='A'].{Name:Name,Type:Type,AliasTarget:AliasTarget.DNSName,EvaluateHealth:AliasTarget.EvaluateTargetHealth}" \
-  --output table
-
-# Testar resolução DNS do portal web
-nslookup www.<DOMAIN_NAME>
-
-# Testar resolução DNS do servidor de jogo
-nslookup game.<DOMAIN_NAME>
-
-# Verificar que o ALB responde via DNS (após instâncias estarem healthy)
-curl -I https://www.<DOMAIN_NAME>
-
-# Verificar redirect HTTP → HTTPS
-curl -I http://www.<DOMAIN_NAME>
-```
-
-**Critérios de sucesso:**
-
-- ✅ Registro A Alias `www.<DOMAIN_NAME>` apontando para DNS do ALB
-- ✅ Registro A Alias `game.<DOMAIN_NAME>` apontando para DNS do NLB
-- ✅ Ambos com `Evaluate target health: true`
-- ✅ `nslookup www.<DOMAIN_NAME>` resolve para IPs do ALB
-- ✅ `nslookup game.<DOMAIN_NAME>` resolve para IPs do NLB
-- ✅ `curl -I https://www.<DOMAIN_NAME>` retorna HTTP 200 (após instâncias healthy)
-- ✅ `curl -I http://www.<DOMAIN_NAME>` retorna HTTP 301 redirect para HTTPS
-
----
-
-
 ## Bloco 10 — Certificado ACM
-
-> **Objetivo**: Solicitar e validar um certificado TLS público via AWS Certificate Manager (ACM) utilizando validação DNS, necessário para o listener HTTPS do ALB.
-> **Tempo estimado**: 5–10 minutos (criação) + até 30 minutos (propagação DNS e validação).
-> **Dependências**: Hosted Zone existente no Route 53, domínio registrado.
 
 > ⚠️ **Importante**: Este bloco deve ser executado **antes** de configurar o listener HTTPS no Bloco 6. O certificado precisa estar no estado "Issued" para ser selecionado no ALB.
 
@@ -1680,9 +1222,6 @@ curl -I http://www.<DOMAIN_NAME>
 |----------------|
 | `*.<DOMAIN_NAME>` (wildcard — cobre www, game e qualquer subdomínio) |
 
-
-> **Nota**: O wildcard (`*.DOMAIN`) permite usar o mesmo certificado para `www.DOMAIN`, `game.DOMAIN` e quaisquer outros subdomínios futuros.
-
 5. Em **Validation method**, selecione:
 
 | Campo | Valor |
@@ -1695,16 +1234,9 @@ curl -I http://www.<DOMAIN_NAME>
 |-------|-------|
 | **Key algorithm** | `RSA 2048` |
 
-7. Na seção **Tags**, adicione:
+7. Clique em **Request**.
 
-| Key | Value |
-|-----|-------|
-| `Project` | `AWS-Luanti-NLB-ALB` |
-| `Environment` | `Lab` |
-
-8. Clique em **Request**.
-
-> 📸 **Screenshot placeholder**: _Captura do certificado solicitado com estado "Pending validation"._
+![Objeto](imagens/imagem(32).png)
 
 ---
 
@@ -1740,9 +1272,6 @@ Após solicitar o certificado, o ACM exibe os registros CNAME necessários para 
    - Clique em **Create records**.
    - Repita para cada domínio listado no certificado (domínio base + wildcard).
 
-
-> 📸 **Screenshot placeholder**: _Captura dos registros CNAME de validação criados no Route 53._
-
 ---
 
 ### 10.3 Aguardar Validação — Estado "Issued"
@@ -1762,49 +1291,79 @@ Após solicitar o certificado, o ACM exibe os registros CNAME necessários para 
 
 3. Anote o **ARN do certificado** (formato: `arn:aws:acm:<REGION>:<ACCOUNT_ID>:certificate/<UUID>`).
 
-> 📸 **Screenshot placeholder**: _Captura do certificado no estado "Issued" com ARN visível._
+![Objeto](imagens/imagem(31).png)
 
 ---
 
-### 10.4 Checkpoint de Validação — Bloco 10
-
-```bash
-# Listar certificados ACM na região atual
-aws acm list-certificates \
-  --query "CertificateSummaryList[?contains(DomainName, '<DOMAIN_NAME>')].{Domain:DomainName,ARN:CertificateArn,Status:Status}" \
-  --output table
-
-# Verificar detalhes do certificado (substitua <CERTIFICATE_ARN>)
-aws acm describe-certificate \
-  --certificate-arn <CERTIFICATE_ARN> \
-  --query "Certificate.{Domain:DomainName,Status:Status,Type:Type,SANs:SubjectAlternativeNames,ValidationMethod:DomainValidationOptions[0].ValidationMethod}" \
-  --output table
-
-# Verificar estado de validação de cada domínio
-aws acm describe-certificate \
-  --certificate-arn <CERTIFICATE_ARN> \
-  --query "Certificate.DomainValidationOptions[*].{Domain:DomainName,Status:ValidationStatus,Method:ValidationMethod}" \
-  --output table
-```
-
-**Critérios de sucesso:**
-
-- ✅ Certificado com estado `Issued`
-- ✅ Domínio principal (`<DOMAIN_NAME>`) e wildcard (`*.<DOMAIN_NAME>`) cobertos
-- ✅ Método de validação: `DNS`
-- ✅ Registros CNAME de validação presentes na Hosted Zone do Route 53
-- ✅ ARN do certificado anotado para uso no Bloco 6 (listener HTTPS do ALB)
-- ✅ Tags `Project` e `Environment` aplicadas
+## Acesso ao Portal Web e Servidor de Jogo
 
 ---
 
+### Acessar o Portal Web
 
+1. Abra o navegador e acesse: `https://www.SEU-DOMINIO`
+2. Verifique que o certificado HTTPS está válido (cadeado verde no navegador)
+3. Confirme que a página do portal carrega com as informações do projeto
+
+![Objeto](imagens/imagem(30).png)
+
+---
+
+### Baixar e Instalar o Luanti (Windows)
+
+O Luanti (antigo Minetest) é o cliente necessário para conectar ao servidor de jogo hospedado na infraestrutura.
+
+1. Acesse o site oficial: [https://www.luanti.org/en/downloads/](https://www.luanti.org/en/downloads/)
+2. Clique em **"Luanti 5.16.1 - installer, 64-bit (recommended)"** para baixar o instalador Windows
+3. Execute o arquivo `luanti-5.16.1.exe` baixado
+4. Clique em **"Sim"** na permissão de administrador
+5. Siga o assistente: aceite os termos, escolha a pasta e clique em **"Instalar"**
+6. Após concluir, clique em **"Finalizar"**
+
+> **Alternativa (versão portátil):** Baixe o arquivo `.zip` (portable, 64-bit), extraia em uma pasta e execute `bin\luanti.exe`. Não precisa instalar.
+
+![Objeto](imagens/imagem(29).png)
+
+---
+
+### Configurar e Conectar ao Servidor
+
+1. Abra o **Luanti** pelo Menu Iniciar ou Área de Trabalho
+2. Clique na aba **"Jogar Online"**
+3. No campo **Endereço** (canto superior direito), digite: `game.SEU-DOMINIO`
+4. No campo **Porta**, mantenha: `30000`
+5. No campo **Nome**, escolha um nome de usuário (ex: seu nome)
+6. O campo **Senha** pode ficar vazio
+7. Clique em **"Registrar"** (primeira vez) ou **"Entrar"** (se já tiver conta)
+
+> **Dica:** Após conectar pela primeira vez, o servidor aparecerá na seção "Favoritos" para acesso rápido.
+
+---
+
+### Troubleshooting de Conexão
+
+| Problema | Solução |
+|----------|---------|
+| Não conecta ao servidor | Verifique se o DNS `game.SEU-DOMINIO` resolve para o NLB (use `nslookup`) |
+| Timeout na conexão | Confirme que o SG-GAME permite UDP 30000 de `0.0.0.0/0` |
+| Target Group unhealthy | Verifique se o health check TCP na porta 8080 está respondendo na instância |
+| Portal web não carrega | Confirme que o ALB está ativo e o TG-WEB tem targets healthy |
+
+<p align="center">
+  <img src="imagens/imagem(1).png" width="30%" />
+  <img src="imagens/imagem(16).png" width="30%" />
+  <img src="imagens/imagem(23).png" width="30%" />
+</p>
+<p align="center">
+  <img src="imagens/imagem(26).png" width="30%" />
+  <img src="imagens/imagem(27).png" width="30%" />
+  <img src="imagens/imagem(28).png" width="30%" />
+</p>
+
+---
 
 ## Bloco 11 — CloudWatch Alarmes
 
-> **Objetivo**: Criar alarmes no CloudWatch para monitorar CPU das instâncias EC2 e erros 5XX do ALB, com notificações via SNS.
-> **Tempo estimado**: 15–20 minutos.
-> **Dependências**: Bloco 8 (ASGs com instâncias ativas), Bloco 13 (SNS Topic — pode ser criado primeiro).
 
 > ⚠️ **Nota**: Crie o tópico SNS (Bloco 13) antes dos alarmes para poder associar a ação de notificação. Se preferir, crie o tópico rapidamente antes de voltar a este bloco.
 
@@ -1871,8 +1430,6 @@ aws acm describe-certificate \
 
 8. Clique em **Next**, revise e clique em **Create alarm**.
 
-> 📸 **Screenshot placeholder**: _Captura do alarme CPU-High criado com threshold 80% e 3 datapoints._
-
 ---
 
 ### 11.2 Criar Alarme — Erros 5XX do ALB
@@ -1934,8 +1491,6 @@ aws acm describe-certificate \
 
 8. Clique em **Next**, revise e clique em **Create alarm**.
 
-> 📸 **Screenshot placeholder**: _Captura do alarme 5XX-High criado com threshold >10 em 5 minutos._
-
 ---
 
 ### 11.3 Resumo dos Alarmes CloudWatch
@@ -1951,46 +1506,7 @@ aws acm describe-certificate \
 
 ---
 
-### 11.4 Checkpoint de Validação — Bloco 11
-
-```bash
-# Listar alarmes do projeto
-aws cloudwatch describe-alarms \
-  --alarm-name-prefix "AWS-Luanti-NLB-ALB-Lab" \
-  --query "MetricAlarms[*].{Name:AlarmName,Metric:MetricName,Threshold:Threshold,Period:Period,Datapoints:EvaluationPeriods,State:StateValue,Action:AlarmActions[0]}" \
-  --output table
-
-# Verificar detalhes do alarme CPU
-aws cloudwatch describe-alarms \
-  --alarm-names "AWS-Luanti-NLB-ALB-Lab-CPU-High" \
-  --query "MetricAlarms[0].{Name:AlarmName,Namespace:Namespace,Metric:MetricName,Statistic:Statistic,Threshold:Threshold,ComparisonOperator:ComparisonOperator,Period:Period,EvalPeriods:EvaluationPeriods,State:StateValue}" \
-  --output table
-
-# Verificar detalhes do alarme 5XX
-aws cloudwatch describe-alarms \
-  --alarm-names "AWS-Luanti-NLB-ALB-Lab-5XX-High" \
-  --query "MetricAlarms[0].{Name:AlarmName,Namespace:Namespace,Metric:MetricName,Statistic:Statistic,Threshold:Threshold,ComparisonOperator:ComparisonOperator,Period:Period,EvalPeriods:EvaluationPeriods,State:StateValue}" \
-  --output table
-```
-
-**Critérios de sucesso:**
-
-- ✅ Alarme `AWS-Luanti-NLB-ALB-Lab-CPU-High` criado com threshold >80%, período 60s, 3/3 datapoints
-- ✅ Alarme `AWS-Luanti-NLB-ALB-Lab-5XX-High` criado com threshold >10, período 300s, 1/1 datapoints
-- ✅ Ambos com ação de publicação no tópico SNS `AWS-Luanti-NLB-ALB-Lab-Notifications`
-- ✅ Ambos no estado `OK` (sem alarme ativo) após criação
-- ✅ Statistic correta: Average para CPU, Sum para 5XX
-
----
-
-
 ## Bloco 12 — CloudWatch Logs
-
-> **Objetivo**: Configurar o CloudWatch Logs Agent nas instâncias EC2 para coletar logs do sistema operacional e aplicação, enviando-os para Log Groups dedicados com retenção de 7 dias.
-> **Tempo estimado**: 15–20 minutos.
-> **Dependências**: Bloco 3 (IAM Roles com permissões de Logs), Bloco 8 (ASGs com instâncias ativas).
-
-> **Nota**: A instalação do CloudWatch Agent é feita automaticamente pelo User Data (scripts/user-data-web.sh e scripts/user-data-game.sh). Este bloco documenta a criação dos Log Groups e verificação da configuração.
 
 ---
 
@@ -2043,8 +1559,6 @@ Clique em **Create**.
 | `Project` | `AWS-Luanti-NLB-ALB` |
 | `Environment` | `Lab` |
 
-> 📸 **Screenshot placeholder**: _Captura dos 4 Log Groups criados com retenção de 7 dias._
-
 ---
 
 ### 12.2 Configuração do CloudWatch Agent nas Instâncias
@@ -2091,8 +1605,6 @@ A configuração é embutida nos scripts de User Data. Os pontos-chave são:
 
 > **Referência completa**: Consulte os scripts [`scripts/user-data-web.sh`](scripts/user-data-web.sh) e [`scripts/user-data-game.sh`](scripts/user-data-game.sh) para a configuração completa do CloudWatch Agent.
 
-> 📸 **Screenshot placeholder**: _Captura do CloudWatch Agent configurado e publicando logs._
-
 ---
 
 ### 12.3 Verificar Recebimento de Logs
@@ -2121,56 +1633,7 @@ Após as instâncias serem provisionadas pelo ASG (aguardar ~5 minutos após lan
 
 ---
 
-### 12.5 Checkpoint de Validação — Bloco 12
-
-```bash
-# Listar Log Groups do projeto
-aws logs describe-log-groups \
-  --log-group-name-prefix "/aws-luanti" \
-  --query "logGroups[*].{Name:logGroupName,Retention:retentionInDays,StoredBytes:storedBytes}" \
-  --output table
-
-# Verificar Log Streams ativos (substitua o nome do Log Group)
-aws logs describe-log-streams \
-  --log-group-name "/aws-luanti/web/system" \
-  --order-by LastEventTime \
-  --descending \
-  --limit 5 \
-  --query "logStreams[*].{Name:logStreamName,LastEvent:lastEventTimestamp}" \
-  --output table
-
-# Verificar últimos eventos de log do sistema web
-aws logs get-log-events \
-  --log-group-name "/aws-luanti/web/system" \
-  --log-stream-name $(aws logs describe-log-streams --log-group-name "/aws-luanti/web/system" --order-by LastEventTime --descending --limit 1 --query "logStreams[0].logStreamName" --output text) \
-  --limit 5 \
-  --query "events[*].{Time:timestamp,Message:message}" \
-  --output table
-
-# Verificar status do CloudWatch Agent (via SSH na instância)
-# ssh -i <key.pem> ec2-user@<IP_INSTANCIA>
-# systemctl status amazon-cloudwatch-agent
-```
-
-**Critérios de sucesso:**
-
-- ✅ 4 Log Groups criados com prefixo `/aws-luanti/`
-- ✅ Todos com retenção configurada para 7 dias
-- ✅ Log Streams ativos em cada Log Group (após instâncias serem provisionadas)
-- ✅ Eventos de log recentes visíveis nos streams
-- ✅ `/var/log/messages` sendo coletado de todas as instâncias
-- ✅ Logs de aplicação (Nginx e Docker) sendo coletados
-- ✅ Tags `Project` e `Environment` aplicadas aos Log Groups
-
----
-
-
-
 ## Bloco 13 — SNS Topics
-
-> **Objetivo**: Criar um tópico SNS para centralizar as notificações dos alarmes CloudWatch e configurar subscriptions por email.
-> **Tempo estimado**: 5–10 minutos.
-> **Dependências**: Nenhuma (pode ser criado a qualquer momento, mas é referenciado pelo Bloco 11).
 
 ---
 
@@ -2202,8 +1665,6 @@ aws logs get-log-events \
 5. Clique em **Create topic**.
 6. Anote o **ARN do tópico** (formato: `arn:aws:sns:<REGION>:<ACCOUNT_ID>:AWS-Luanti-NLB-ALB-Lab-Notifications`).
 
-> 📸 **Screenshot placeholder**: _Captura do tópico SNS criado com nome e ARN visíveis._
-
 ---
 
 ### 13.2 Criar Subscription por Email
@@ -2227,8 +1688,6 @@ aws logs get-log-events \
 
 > ⚠️ **Importante**: Até que a subscription seja confirmada via email, nenhuma notificação será entregue. Confirme o mais rápido possível.
 
-> 📸 **Screenshot placeholder**: _Captura da subscription confirmada com estado "Confirmed"._
-
 ---
 
 ### 13.3 Testar Notificação (Opcional)
@@ -2247,438 +1706,3 @@ Para validar que as notificações funcionam:
 4. Verifique se o email chegou na caixa de entrada.
 
 ---
-
-### 13.4 Checkpoint de Validação — Bloco 13
-
-```bash
-# Listar tópicos SNS
-aws sns list-topics \
-  --query "Topics[?contains(TopicArn, 'AWS-Luanti-NLB-ALB-Lab')].TopicArn" \
-  --output table
-
-# Verificar atributos do tópico
-aws sns get-topic-attributes \
-  --topic-arn arn:aws:sns:<REGION>:<ACCOUNT_ID>:AWS-Luanti-NLB-ALB-Lab-Notifications \
-  --query "Attributes.{Name:DisplayName,SubscriptionsConfirmed:SubscriptionsConfirmed,SubscriptionsPending:SubscriptionsPending}" \
-  --output table
-
-# Listar subscriptions do tópico
-aws sns list-subscriptions-by-topic \
-  --topic-arn arn:aws:sns:<REGION>:<ACCOUNT_ID>:AWS-Luanti-NLB-ALB-Lab-Notifications \
-  --query "Subscriptions[*].{Protocol:Protocol,Endpoint:Endpoint,Status:SubscriptionArn}" \
-  --output table
-
-# Verificar que os alarmes CloudWatch apontam para este tópico
-aws cloudwatch describe-alarms \
-  --alarm-name-prefix "AWS-Luanti-NLB-ALB-Lab" \
-  --query "MetricAlarms[*].{Alarm:AlarmName,SNSAction:AlarmActions[0]}" \
-  --output table
-```
-
-**Critérios de sucesso:**
-
-- ✅ Tópico `AWS-Luanti-NLB-ALB-Lab-Notifications` criado com tipo Standard
-- ✅ Pelo menos 1 subscription por email com estado `Confirmed`
-- ✅ Alarmes do Bloco 11 referenciando o ARN deste tópico como ação
-- ✅ Display name configurado como `Luanti Lab Alerts`
-- ✅ Tags `Project` e `Environment` aplicadas
-
----
-
-
-
----
-
-# Remoção dos Recursos (Ordem Reversa)
-
-> **Objetivo**: Remover todos os recursos AWS criados neste laboratório na ordem correta (reversa à criação), evitando erros de dependência.
-> **Tempo estimado total**: 30–45 minutos.
-
-> ⚠️ **ATENÇÃO**: A remoção deve seguir **rigorosamente a ordem reversa** (Bloco 13 → Bloco 1). Tentar deletar recursos fora de ordem resultará em erros de dependência (o Console AWS impedirá a exclusão).
-
----
-
-## Ordem de Remoção
-
-A tabela abaixo lista todos os recursos na ordem correta de exclusão:
-
-| Ordem | Bloco Original | Recurso a Deletar | Dependência que impede exclusão |
-|-------|---------------|--------------------|---------------------------------|
-| 1 | 13 - SNS | Subscriptions do tópico | — |
-| 2 | 13 - SNS | Tópico `AWS-Luanti-NLB-ALB-Lab-Notifications` | Remover referências nos alarmes primeiro |
-| 3 | 12 - Logs | Log Streams (em cada Log Group) | — |
-| 4 | 12 - Logs | Log Groups (`/aws-luanti/*`) | — |
-| 5 | 11 - Alarmes | Alarme `AWS-Luanti-NLB-ALB-Lab-CPU-High` | — |
-| 6 | 11 - Alarmes | Alarme `AWS-Luanti-NLB-ALB-Lab-5XX-High` | — |
-| 7 | 10 - ACM | Registros CNAME de validação (Route 53) | Desassociar certificado do ALB primeiro |
-| 8 | 10 - ACM | Certificado ACM | Não pode ser deletado se associado a um listener |
-| 9 | 9 - DNS | Record `www.<DOMAIN_NAME>` (Route 53) | — |
-| 10 | 9 - DNS | Record `game.<DOMAIN_NAME>` (Route 53) | — |
-| 11 | 8 - ASGs | `ASG-WEB` (terminará instâncias automaticamente) | Desassociar do TG antes ou junto |
-| 12 | 8 - ASGs | `ASG-GAME` (terminará instâncias automaticamente) | Desassociar do TG antes ou junto |
-
-| 13 | 7 - NLB | Listener UDP:30000 do NLB | — |
-| 14 | 7 - NLB | Load Balancer `nlb-luanti-game` | Remover listeners primeiro |
-| 15 | 6 - ALB | Listener HTTPS:443 do ALB | — |
-| 16 | 6 - ALB | Listener HTTP:80 do ALB | — |
-| 17 | 6 - ALB | Load Balancer `alb-luanti-web` | Remover listeners primeiro |
-| 18 | 5 - TGs | Target Group `TG-WEB` | Não pode ser deletado se associado a um ASG ou listener ativo |
-| 19 | 5 - TGs | Target Group `TG-GAME` | Não pode ser deletado se associado a um ASG ou listener ativo |
-| 20 | 4 - LTs | Launch Template `AWS-Luanti-NLB-ALB-Lab-LT-WEB` | Não pode ser deletado se referenciado por ASG ativo |
-| 21 | 4 - LTs | Launch Template `AWS-Luanti-NLB-ALB-Lab-LT-GAME` | Não pode ser deletado se referenciado por ASG ativo |
-| 22 | 3 - IAM | Policy `AWS-Luanti-NLB-ALB-Lab-WebPolicy` | Desanexar da Role primeiro |
-| 23 | 3 - IAM | Policy `AWS-Luanti-NLB-ALB-Lab-GamePolicy` | Desanexar da Role primeiro |
-| 24 | 3 - IAM | Role `AWS-Luanti-NLB-ALB-Lab-WebRole` (com Instance Profile) | Remover Instance Profile primeiro |
-| 25 | 3 - IAM | Role `AWS-Luanti-NLB-ALB-Lab-GameRole` (com Instance Profile) | Remover Instance Profile primeiro |
-| 26 | 2 - SGs | Security Group `SG-WEB` | Remover regras que o referenciam primeiro |
-| 27 | 2 - SGs | Security Group `SG-GAME` | Verificar que nenhum recurso o utiliza |
-| 28 | 2 - SGs | Security Group `SG-ALB` | Remover regras do SG-WEB que o referenciam primeiro |
-| 29 | 1 - Rede | Route Table e associações | — |
-| 30 | 1 - Rede | Internet Gateway (detach + delete) | Detach da VPC antes de deletar |
-| 31 | 1 - Rede | Subnets públicas | Verificar que não há ENIs ativas |
-| 32 | 1 - Rede | VPC `AWS-Luanti-NLB-ALB-Lab-VPC` | Todos os recursos internos devem estar removidos |
-
----
-
-## Instruções Detalhadas de Remoção
-
-### Passo 1 — Remover SNS (Bloco 13)
-
-```bash
-# Deletar subscriptions
-aws sns list-subscriptions-by-topic \
-  --topic-arn arn:aws:sns:<REGION>:<ACCOUNT_ID>:AWS-Luanti-NLB-ALB-Lab-Notifications \
-  --query "Subscriptions[*].SubscriptionArn" --output text | \
-  xargs -n1 aws sns unsubscribe --subscription-arn
-
-# Deletar tópico
-aws sns delete-topic \
-  --topic-arn arn:aws:sns:<REGION>:<ACCOUNT_ID>:AWS-Luanti-NLB-ALB-Lab-Notifications
-```
-
-**Via Console**: SNS → Topics → selecione o tópico → **Delete**.
-
----
-
-### Passo 2 — Remover CloudWatch Logs (Bloco 12)
-
-```bash
-# Deletar Log Groups
-aws logs delete-log-group --log-group-name "/aws-luanti/web/system"
-aws logs delete-log-group --log-group-name "/aws-luanti/web/nginx"
-aws logs delete-log-group --log-group-name "/aws-luanti/game/system"
-aws logs delete-log-group --log-group-name "/aws-luanti/game/application"
-```
-
-**Via Console**: CloudWatch → Logs → Log groups → selecione os 4 groups → **Actions** → **Delete**.
-
----
-
-### Passo 3 — Remover CloudWatch Alarmes (Bloco 11)
-
-```bash
-# Deletar alarmes
-aws cloudwatch delete-alarms \
-  --alarm-names "AWS-Luanti-NLB-ALB-Lab-CPU-High" "AWS-Luanti-NLB-ALB-Lab-5XX-High"
-```
-
-**Via Console**: CloudWatch → Alarms → selecione os alarmes → **Actions** → **Delete**.
-
----
-
-### Passo 4 — Remover Certificado ACM (Bloco 10)
-
-> ⚠️ **Antes de deletar**: Certifique-se de que o certificado **não está associado** ao listener HTTPS do ALB. O ALB deve ser removido primeiro (Passo 7).
-
-```bash
-# Verificar que o certificado não está em uso
-aws acm describe-certificate \
-  --certificate-arn <CERTIFICATE_ARN> \
-  --query "Certificate.InUseBy" --output text
-
-# Se "InUseBy" estiver vazio, deletar o certificado
-aws acm delete-certificate --certificate-arn <CERTIFICATE_ARN>
-```
-
-**Via Console**: ACM → selecione o certificado → **Delete**. Também remova os registros CNAME de validação no Route 53.
-
----
-
-### Passo 5 — Remover DNS Route 53 (Bloco 9)
-
-1. Acesse **Route 53** → **Hosted zones** → selecione a zona.
-2. Selecione os registros `www.<DOMAIN_NAME>` e `game.<DOMAIN_NAME>`.
-3. Clique em **Delete records**.
-
-```bash
-# Via CLI (requer JSON change batch)
-aws route53 change-resource-record-sets \
-  --hosted-zone-id <HOSTED_ZONE_ID> \
-  --change-batch '{
-    "Changes": [
-      {
-        "Action": "DELETE",
-        "ResourceRecordSet": {
-          "Name": "www.<DOMAIN_NAME>",
-          "Type": "A",
-          "AliasTarget": {
-            "HostedZoneId": "<ALB_HOSTED_ZONE_ID>",
-            "DNSName": "<ALB_DNS_NAME>",
-            "EvaluateTargetHealth": true
-          }
-        }
-      }
-    ]
-  }'
-```
-
-> Repita para o registro `game.<DOMAIN_NAME>` apontando para o NLB.
-
----
-
-### Passo 6 — Remover Auto Scaling Groups (Bloco 8)
-
-> ⚠️ **Atenção**: Ao deletar um ASG, todas as instâncias EC2 gerenciadas por ele serão **automaticamente terminadas**.
-
-```bash
-# Deletar ASG-WEB (força deleção mesmo com instâncias ativas)
-aws autoscaling delete-auto-scaling-group \
-  --auto-scaling-group-name ASG-WEB \
-  --force-delete
-
-# Deletar ASG-GAME
-aws autoscaling delete-auto-scaling-group \
-  --auto-scaling-group-name ASG-GAME \
-  --force-delete
-```
-
-**Via Console**: EC2 → Auto Scaling Groups → selecione o ASG → **Delete** → confirme.
-
-> Aguarde a terminação das instâncias antes de prosseguir (1–2 minutos).
-
----
-
-### Passo 7 — Remover Load Balancers (Blocos 6 e 7)
-
-```bash
-# Deletar ALB
-aws elbv2 delete-load-balancer \
-  --load-balancer-arn $(aws elbv2 describe-load-balancers --names alb-luanti-web --query "LoadBalancers[0].LoadBalancerArn" --output text)
-
-# Deletar NLB
-aws elbv2 delete-load-balancer \
-  --load-balancer-arn $(aws elbv2 describe-load-balancers --names nlb-luanti-game --query "LoadBalancers[0].LoadBalancerArn" --output text)
-```
-
-**Via Console**: EC2 → Load Balancers → selecione → **Actions** → **Delete**.
-
-> Aguarde que o estado mude para **"deleted"** antes de remover Target Groups (pode levar 1–2 minutos).
-
----
-
-### Passo 8 — Remover Target Groups (Bloco 5)
-
-> ⚠️ Os Target Groups só podem ser removidos depois que os Load Balancers e ASGs que os referenciam forem deletados.
-
-```bash
-# Deletar TG-WEB
-aws elbv2 delete-target-group \
-  --target-group-arn $(aws elbv2 describe-target-groups --names TG-WEB --query "TargetGroups[0].TargetGroupArn" --output text)
-
-# Deletar TG-GAME
-aws elbv2 delete-target-group \
-  --target-group-arn $(aws elbv2 describe-target-groups --names TG-GAME --query "TargetGroups[0].TargetGroupArn" --output text)
-```
-
-**Via Console**: EC2 → Target Groups → selecione → **Actions** → **Delete**.
-
----
-
-### Passo 9 — Remover Launch Templates (Bloco 4)
-
-```bash
-# Deletar LT-WEB
-aws ec2 delete-launch-template \
-  --launch-template-name AWS-Luanti-NLB-ALB-Lab-LT-WEB
-
-# Deletar LT-GAME
-aws ec2 delete-launch-template \
-  --launch-template-name AWS-Luanti-NLB-ALB-Lab-LT-GAME
-```
-
-**Via Console**: EC2 → Launch Templates → selecione → **Actions** → **Delete template**.
-
----
-
-### Passo 10 — Remover IAM Roles e Policies (Bloco 3)
-
-> ⚠️ **Ordem obrigatória**: Desanexar policies → Remover Role do Instance Profile → Deletar Instance Profile → Deletar Role → Deletar Policy.
-
-```bash
-# === WebRole ===
-# Desanexar policy
-aws iam detach-role-policy \
-  --role-name AWS-Luanti-NLB-ALB-Lab-WebRole \
-  --policy-arn arn:aws:iam::<ACCOUNT_ID>:policy/AWS-Luanti-NLB-ALB-Lab-WebPolicy
-
-# Remover role do instance profile
-aws iam remove-role-from-instance-profile \
-  --instance-profile-name AWS-Luanti-NLB-ALB-Lab-WebRole \
-  --role-name AWS-Luanti-NLB-ALB-Lab-WebRole
-
-# Deletar instance profile
-aws iam delete-instance-profile \
-  --instance-profile-name AWS-Luanti-NLB-ALB-Lab-WebRole
-
-# Deletar role
-aws iam delete-role --role-name AWS-Luanti-NLB-ALB-Lab-WebRole
-
-# Deletar policy
-aws iam delete-policy \
-  --policy-arn arn:aws:iam::<ACCOUNT_ID>:policy/AWS-Luanti-NLB-ALB-Lab-WebPolicy
-
-# === GameRole ===
-# Desanexar policy
-aws iam detach-role-policy \
-  --role-name AWS-Luanti-NLB-ALB-Lab-GameRole \
-  --policy-arn arn:aws:iam::<ACCOUNT_ID>:policy/AWS-Luanti-NLB-ALB-Lab-GamePolicy
-
-# Remover role do instance profile
-aws iam remove-role-from-instance-profile \
-  --instance-profile-name AWS-Luanti-NLB-ALB-Lab-GameRole \
-  --role-name AWS-Luanti-NLB-ALB-Lab-GameRole
-
-# Deletar instance profile
-aws iam delete-instance-profile \
-  --instance-profile-name AWS-Luanti-NLB-ALB-Lab-GameRole
-
-# Deletar role
-aws iam delete-role --role-name AWS-Luanti-NLB-ALB-Lab-GameRole
-
-# Deletar policy
-aws iam delete-policy \
-  --policy-arn arn:aws:iam::<ACCOUNT_ID>:policy/AWS-Luanti-NLB-ALB-Lab-GamePolicy
-```
-
-
-**Via Console**: IAM → Roles → selecione a Role → Detach policies → Delete role. Depois IAM → Policies → selecione → **Delete**.
-
----
-
-### Passo 11 — Remover Security Groups (Bloco 2)
-
-> ⚠️ **Ordem importante**: Remova primeiro os SGs que **não são referenciados** por outros (SG-GAME), depois o SG que é referenciado (SG-ALB dentro do SG-WEB). Antes de deletar SG-ALB, remova a regra no SG-WEB que o referencia.
-
-```bash
-# Primeiro: remover a regra do SG-WEB que referencia SG-ALB
-aws ec2 revoke-security-group-ingress \
-  --group-id <SG_WEB_ID> \
-  --protocol tcp --port 80 \
-  --source-group <SG_ALB_ID>
-
-# Agora deletar os Security Groups (em qualquer ordem)
-aws ec2 delete-security-group --group-id <SG_GAME_ID>
-aws ec2 delete-security-group --group-id <SG_WEB_ID>
-aws ec2 delete-security-group --group-id <SG_ALB_ID>
-```
-
-**Via Console**: EC2 → Security Groups → selecione → **Actions** → **Delete security groups**.
-
-> Se receber erro "has a dependent object", verifique se há ENIs (Elastic Network Interfaces) ativas usando o SG. Aguarde que os Load Balancers e instâncias sejam completamente removidos.
-
----
-
-### Passo 12 — Remover VPC e Rede (Bloco 1)
-
-> ⚠️ **Dependências da VPC**: A VPC só pode ser deletada quando TODOS os recursos internos forem removidos (subnets, IGW, route tables, security groups, ENIs).
-
-```bash
-# Deletar associações da Route Table com subnets
-aws ec2 disassociate-route-table \
-  --association-id <ROUTE_TABLE_ASSOCIATION_ID_1>
-aws ec2 disassociate-route-table \
-  --association-id <ROUTE_TABLE_ASSOCIATION_ID_2>
-
-# Deletar Route Table (apenas as criadas manualmente, não a "main")
-aws ec2 delete-route-table --route-table-id <ROUTE_TABLE_ID>
-
-# Detach Internet Gateway da VPC
-aws ec2 detach-internet-gateway \
-  --internet-gateway-id <IGW_ID> \
-  --vpc-id <VPC_ID>
-
-# Deletar Internet Gateway
-aws ec2 delete-internet-gateway --internet-gateway-id <IGW_ID>
-
-# Deletar Subnets
-aws ec2 delete-subnet --subnet-id <SUBNET_AZ1_ID>
-aws ec2 delete-subnet --subnet-id <SUBNET_AZ2_ID>
-
-# Deletar VPC
-aws ec2 delete-vpc --vpc-id <VPC_ID>
-```
-
-
-**Via Console**: VPC → Your VPCs → selecione `AWS-Luanti-NLB-ALB-Lab-VPC` → **Actions** → **Delete VPC**. O Console oferece a opção de deletar recursos dependentes automaticamente.
-
-> **Dica**: A opção "Delete VPC" do Console pode lidar com a remoção de subnets, route tables e IGW automaticamente, mas é recomendado fazer manualmente para entender as dependências.
-
----
-
-## Alertas de Dependência
-
-| Se tentar deletar... | Erro provável | Solução |
-|---------------------|---------------|---------|
-| VPC com recursos ativos | `DependencyViolation: The vpc has dependencies` | Remover todos os recursos internos primeiro |
-| Security Group em uso | `DependencyViolation: resource has a dependent object` | Remover regras que referenciam o SG, aguardar deleção de ENIs |
-| Target Group com listener associado | `ResourceInUse` | Deletar o Load Balancer ou listener primeiro |
-| Certificado ACM em uso pelo ALB | `ResourceInUseException` | Remover o listener HTTPS ou o ALB primeiro |
-| Launch Template referenciado por ASG | `ResourceInUse` | Deletar o ASG primeiro |
-| IAM Role com policy anexada | `DeleteConflict: Cannot delete a role with policies attached` | Desanexar todas as policies primeiro |
-| Internet Gateway attached à VPC | `DependencyViolation` | Executar `detach-internet-gateway` antes do delete |
-| Route Table com associações | `DependencyViolation` | Desassociar das subnets antes de deletar |
-
----
-
-## Checklist Final de Remoção
-
-Use este checklist para confirmar que todos os recursos foram removidos:
-
-- [ ] SNS: Tópico `AWS-Luanti-NLB-ALB-Lab-Notifications` deletado
-- [ ] CloudWatch Logs: 4 Log Groups `/aws-luanti/*` deletados
-- [ ] CloudWatch Alarmes: `CPU-High` e `5XX-High` deletados
-- [ ] ACM: Certificado deletado + CNAMEs de validação removidos
-- [ ] Route 53: Records `www` e `game` deletados
-- [ ] ASGs: `ASG-WEB` e `ASG-GAME` deletados (instâncias terminadas)
-- [ ] ALB: `alb-luanti-web` deletado
-- [ ] NLB: `nlb-luanti-game` deletado
-- [ ] Target Groups: `TG-WEB` e `TG-GAME` deletados
-- [ ] Launch Templates: `LT-WEB` e `LT-GAME` deletados
-- [ ] IAM: Roles, Policies e Instance Profiles deletados
-- [ ] Security Groups: `SG-ALB`, `SG-WEB`, `SG-GAME` deletados
-- [ ] VPC: Route Table, IGW, Subnets e VPC deletados
-
-
-### Verificação Final — Confirmar Remoção Completa
-
-```bash
-# Verificar que não há recursos com a tag do projeto
-aws resourcegroupstaggingapi get-resources \
-  --tag-filters Key=Project,Values=AWS-Luanti-NLB-ALB \
-  --query "ResourceTagMappingList[*].{ARN:ResourceARN}" \
-  --output table
-
-# Verificar que a VPC foi removida
-aws ec2 describe-vpcs \
-  --filters "Name=tag:Project,Values=AWS-Luanti-NLB-ALB" \
-  --query "Vpcs[*].VpcId" --output text
-
-# Verificar que não há instâncias remanescentes
-aws ec2 describe-instances \
-  --filters "Name=tag:Project,Values=AWS-Luanti-NLB-ALB" "Name=instance-state-name,Values=running,pending,stopping" \
-  --query "Reservations[*].Instances[*].InstanceId" --output text
-```
-
-**Se todos os comandos retornarem vazio, a remoção foi concluída com sucesso.** ✅
-
-> **Nota sobre custos**: Após a remoção completa, não haverá mais cobranças associadas a este laboratório. Verifique o **AWS Cost Explorer** nos dias seguintes para confirmar que não há cobranças residuais.
