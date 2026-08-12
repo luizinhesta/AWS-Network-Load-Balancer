@@ -83,15 +83,9 @@ Preencha os valores no arquivo `.env.example` antes de iniciar:
 - Verifique no canto superior direito do Console que a região ativa é a desejada.
 - Todas as instruções deste guia assumem que você está operando na mesma região.
 
-### 7. Tags Padrão
+### 7. Tags Padrão (Opcional)
 
-Todos os recursos criados neste guia devem receber as seguintes tags:
-
-| Tag Key | Tag Value |
-|---------|-----------|
-| `Project` | `AWS-Luanti-NLB-ALB` |
-| `Environment` | `Lab` |
-| `ManagedBy` | `Console` |
+Para facilitar a identificação e organização dos recursos, considere adicionar a tag `Project=AWS-Luanti-NLB-ALB` nos recursos principais (VPC, Security Groups). Tags não são obrigatórias para o funcionamento da infraestrutura.
 
 ---
 
@@ -277,43 +271,6 @@ Para **cada uma** das duas subnets criadas:
 
 ---
 
-### 1.9 Checkpoint de Validação — Bloco 1
-
-Execute os seguintes comandos AWS CLI para confirmar a criação correta dos recursos:
-
-```bash
-# Verificar VPC
-aws ec2 describe-vpcs \
-  --filters "Name=tag:Project,Values=AWS-Luanti-NLB-ALB" \
-  --query "Vpcs[*].{ID:VpcId,CIDR:CidrBlock,State:State}" \
-  --output table
-
-# Verificar Subnets
-aws ec2 describe-subnets \
-  --filters "Name=tag:Project,Values=AWS-Luanti-NLB-ALB" \
-  --query "Subnets[*].{ID:SubnetId,CIDR:CidrBlock,AZ:AvailabilityZone,PublicIP:MapPublicIpOnLaunch}" \
-  --output table
-
-# Verificar Internet Gateway
-aws ec2 describe-internet-gateways \
-  --filters "Name=tag:Project,Values=AWS-Luanti-NLB-ALB" \
-  --query "InternetGateways[*].{ID:InternetGatewayId,Attachments:Attachments[0].State}" \
-  --output table
-
-# Verificar Route Table
-aws ec2 describe-route-tables \
-  --filters "Name=tag:Project,Values=AWS-Luanti-NLB-ALB" \
-  --query "RouteTables[*].{ID:RouteTableId,Routes:Routes[*].{Dest:DestinationCidrBlock,Target:GatewayId}}" \
-  --output table
-```
-
-**Critérios de sucesso:**
-
-- ✅ VPC com CIDR `10.0.0.0/16` no estado `available`
-- ✅ 2 subnets em AZs distintas com `MapPublicIpOnLaunch: true`
-- ✅ Internet Gateway com estado `attached`
-- ✅ Route Table com rota `0.0.0.0/0` → IGW
-
 ---
 
 
@@ -418,6 +375,7 @@ aws ec2 describe-route-tables \
 | Type | Protocol | Port range | Source | Description |
 |------|----------|------------|--------|-------------|
 | Custom UDP | UDP | 30000 | `0.0.0.0/0` | Tráfego UDP Luanti de qualquer origem |
+| Custom TCP | TCP | 8080 | `10.0.0.0/16` | Health check do NLB (socat) |
 
 4. Em **Outbound rules**, mantenha a regra padrão (All traffic → 0.0.0.0/0).
 
@@ -457,42 +415,6 @@ Se você necessita de acesso SSH para debugging, adicione esta regra aos Securit
 > 📸 **Screenshot placeholder**: _Captura da regra SSH restrita ao IP do operador._
 
 ---
-
-### 2.5 Checkpoint de Validação — Bloco 2
-
-```bash
-# Listar Security Groups do projeto
-aws ec2 describe-security-groups \
-  --filters "Name=tag:Project,Values=AWS-Luanti-NLB-ALB" \
-  --query "SecurityGroups[*].{Name:GroupName,ID:GroupId,Description:Description}" \
-  --output table
-
-# Verificar regras do SG-ALB
-aws ec2 describe-security-groups \
-  --filters "Name=group-name,Values=SG-ALB" \
-  --query "SecurityGroups[0].IpPermissions[*].{Protocol:IpProtocol,FromPort:FromPort,ToPort:ToPort,Source:IpRanges[0].CidrIp}" \
-  --output table
-
-# Verificar regras do SG-WEB (deve referenciar SG-ALB por ID)
-aws ec2 describe-security-groups \
-  --filters "Name=group-name,Values=SG-WEB" \
-  --query "SecurityGroups[0].IpPermissions[*].{Protocol:IpProtocol,FromPort:FromPort,ToPort:ToPort,SourceSG:UserIdGroupPairs[0].GroupId}" \
-  --output table
-
-# Verificar regras do SG-GAME
-aws ec2 describe-security-groups \
-  --filters "Name=group-name,Values=SG-GAME" \
-  --query "SecurityGroups[0].IpPermissions[*].{Protocol:IpProtocol,FromPort:FromPort,ToPort:ToPort,Source:IpRanges[0].CidrIp}" \
-  --output table
-```
-
-**Critérios de sucesso:**
-
-- ✅ SG-ALB: TCP 80 e 443 de `0.0.0.0/0`
-- ✅ SG-WEB: TCP 80 com source = Security Group ID do SG-ALB
-- ✅ SG-GAME: UDP 30000 de `0.0.0.0/0`
-- ✅ Nenhuma regra de entrada adicional (exceto SSH opcional com IP restrito)
-- ✅ Todos os SGs com tags `Project` e `Environment` corretas
 
 ---
 
@@ -753,40 +675,6 @@ aws iam add-role-to-instance-profile \
 
 ---
 
-### 3.8 Checkpoint de Validação — Bloco 3
-
-```bash
-# Listar IAM Roles do projeto
-aws iam list-roles \
-  --query "Roles[?contains(RoleName, 'AWS-Luanti-NLB-ALB-Lab')].{Name:RoleName,ARN:Arn}" \
-  --output table
-
-# Verificar políticas anexadas à WebRole
-aws iam list-attached-role-policies \
-  --role-name AWS-Luanti-NLB-ALB-Lab-WebRole \
-  --query "AttachedPolicies[*].{Name:PolicyName,ARN:PolicyArn}" \
-  --output table
-
-# Verificar políticas anexadas à GameRole
-aws iam list-attached-role-policies \
-  --role-name AWS-Luanti-NLB-ALB-Lab-GameRole \
-  --query "AttachedPolicies[*].{Name:PolicyName,ARN:PolicyArn}" \
-  --output table
-
-# Verificar Instance Profiles
-aws iam list-instance-profiles \
-  --query "InstanceProfiles[?contains(InstanceProfileName, 'AWS-Luanti-NLB-ALB-Lab')].{Name:InstanceProfileName,Roles:Roles[0].RoleName}" \
-  --output table
-```
-
-**Critérios de sucesso:**
-
-- ✅ `AWS-Luanti-NLB-ALB-Lab-WebRole` com `AWS-Luanti-NLB-ALB-Lab-WebPolicy` anexada
-- ✅ `AWS-Luanti-NLB-ALB-Lab-GameRole` com `AWS-Luanti-NLB-ALB-Lab-GamePolicy` anexada
-- ✅ Ambas as policies com permissões exclusivas para CloudWatch (PutMetricData, Logs)
-- ✅ Sem wildcards em Actions — apenas ações específicas listadas
-- ✅ Instance Profiles associados às respectivas Roles
-
 ---
 
 
@@ -952,8 +840,9 @@ O script realiza as seguintes operações:
 - Atualiza pacotes do sistema
 - Instala Docker
 - Inicia o serviço Docker
-- Baixa a imagem do servidor Luanti
-- Inicia o container na porta UDP 30000
+- Baixa a imagem `lscr.io/linuxserver/luanti:latest`
+- Inicia o container na porta UDP/TCP 30000
+- Configura serviço de health check TCP na porta 8080 (socat)
 - Instala e configura o CloudWatch Agent
 - Provisionamento completo em até 300 segundos
 
@@ -995,47 +884,6 @@ Tipos de instância configurados para o pool de jogo:
 | LT-GAME | `AWS-Luanti-NLB-ALB-Lab-LT-GAME` | Amazon Linux 2023 | ✅ Terminate | `AWS-Luanti-NLB-ALB-Lab-GameRole` | `SG-GAME` | `user-data-game.sh` |
 
 ---
-
-### 4.6 Checkpoint de Validação — Bloco 4
-
-```bash
-# Listar Launch Templates do projeto
-aws ec2 describe-launch-templates \
-  --filters "Name=tag:Project,Values=AWS-Luanti-NLB-ALB" \
-  --query "LaunchTemplates[*].{Name:LaunchTemplateName,ID:LaunchTemplateId,Version:LatestVersionNumber}" \
-  --output table
-
-# Verificar detalhes do LT-WEB
-aws ec2 describe-launch-template-versions \
-  --launch-template-name AWS-Luanti-NLB-ALB-Lab-LT-WEB \
-  --versions '$Latest' \
-  --query "LaunchTemplateVersions[0].LaunchTemplateData.{AMI:ImageId,InstanceType:InstanceType,SpotOptions:InstanceMarketOptions.MarketType,SecurityGroups:SecurityGroupIds,IAMProfile:IamInstanceProfile.Name}" \
-  --output table
-
-# Verificar detalhes do LT-GAME
-aws ec2 describe-launch-template-versions \
-  --launch-template-name AWS-Luanti-NLB-ALB-Lab-LT-GAME \
-  --versions '$Latest' \
-  --query "LaunchTemplateVersions[0].LaunchTemplateData.{AMI:ImageId,InstanceType:InstanceType,SpotOptions:InstanceMarketOptions.MarketType,SecurityGroups:SecurityGroupIds,IAMProfile:IamInstanceProfile.Name}" \
-  --output table
-
-# Verificar que User Data está configurado (campo não vazio)
-aws ec2 describe-launch-template-versions \
-  --launch-template-name AWS-Luanti-NLB-ALB-Lab-LT-WEB \
-  --versions '$Latest' \
-  --query "LaunchTemplateVersions[0].LaunchTemplateData.UserData" \
-  --output text | head -c 50
-```
-
-**Critérios de sucesso:**
-
-- ✅ `AWS-Luanti-NLB-ALB-Lab-LT-WEB` criado com Amazon Linux 2023
-- ✅ `AWS-Luanti-NLB-ALB-Lab-LT-GAME` criado com Amazon Linux 2023
-- ✅ Ambos com `MarketType: spot` e `InterruptionBehavior: terminate`
-- ✅ LT-WEB com Instance Profile `AWS-Luanti-NLB-ALB-Lab-WebRole` e SG `SG-WEB`
-- ✅ LT-GAME com Instance Profile `AWS-Luanti-NLB-ALB-Lab-GameRole` e SG `SG-GAME`
-- ✅ Ambos com campo User Data preenchido (não vazio)
-- ✅ Todos os Launch Templates com tags `Project` e `Environment` corretas
 
 ---
 
@@ -1114,9 +962,9 @@ aws ec2 describe-launch-template-versions \
 | Campo | Valor |
 |-------|-------|
 | **Health check protocol** | `TCP` |
-| **Health check port** | `30000` |
+| **Health check port** | Selecione **Override** e digite `8080` |
 
-> ⚠️ **Nota**: Target Groups UDP não suportam health check via UDP. Utilizamos TCP na mesma porta como verificação de que o processo está escutando.
+> ⚠️ **Nota**: Target Groups UDP não suportam health check via UDP. Utilizamos TCP na porta 8080 (Override), onde o script `user-data-game.sh` configura um serviço `socat` que responde OK quando o container Luanti está rodando. Esta abordagem é mais confiável que verificar TCP na porta do jogo.
 
 5. Expanda **Advanced health check settings**:
 
@@ -1139,16 +987,16 @@ aws ec2 describe-launch-template-versions \
 8. Na tela **Register targets**, **não registre targets agora** (o ASG fará isso automaticamente no Bloco 8).
 9. Clique em **Create target group**.
 
-> 📸 **Screenshot placeholder**: _Captura do TG-GAME criado com health check TCP na porta 30000._
+> 📸 **Screenshot placeholder**: _Captura do TG-GAME criado com health check TCP na porta 8080 (Override)._
 
 ---
 
 ### 5.3 Resumo dos Target Groups
 
-| Target Group | Protocolo | Porta | Health Check | Path | Intervalo | Threshold (Healthy/Unhealthy) |
-|--------------|-----------|-------|--------------|------|-----------|-------------------------------|
-| `TG-WEB` | HTTP | 80 | HTTP | `/health` | 30s | 3/3 |
-| `TG-GAME` | UDP | 30000 | TCP | — | 30s | 3/3 |
+| Target Group | Protocolo | Porta | Health Check | Porta HC | Path | Intervalo | Threshold |
+|--------------|-----------|-------|--------------|----------|------|-----------|-----------|
+| `TG-WEB` | HTTP | 80 | HTTP | Traffic port | `/health` | 30s | 3/3 |
+| `TG-GAME` | UDP | 30000 | TCP | 8080 (Override) | — | 30s | 3/3 |
 
 ---
 

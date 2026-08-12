@@ -1,5 +1,5 @@
 # Docker Compose para orquestração local do servidor Luanti
-# Porta UDP 30000 para conexões de jogadores
+# Porta UDP/TCP 30000 para conexões de jogadores e health check
 # Volume local para persistência dos dados do mundo
 
 services:
@@ -8,13 +8,14 @@ services:
     container_name: luanti-server
     ports:
       - "30000:30000/udp"
+      - "30000:30000/tcp"
     volumes:
       - world-data:/config/worlds
     environment:
       - PUID=1000
       - PGID=1000
       - TZ=America/Sao_Paulo
-      - CLI_ARGS=--gameid minetest
+      - CLI_ARGS=--gameid devtest
     restart: unless-stopped
 
 volumes:

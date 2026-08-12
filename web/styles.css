@@ -249,6 +249,22 @@ ol li {
   line-height: 1.6;
 }
 
+/* Caixa de informação / dica */
+.info-box {
+  background-color: #ebf8ff;
+  border: 1px solid #bee3f8;
+  border-left: 4px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  margin-top: var(--spacing-lg);
+  color: var(--color-text-light);
+  font-size: 0.95rem;
+}
+
+.info-box strong {
+  color: var(--color-accent);
+}
+
 /* Seções educacionais dentro de #educacional */
 #educacional > section {
   background-color: var(--color-surface);

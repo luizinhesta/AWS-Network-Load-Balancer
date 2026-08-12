@@ -14,13 +14,6 @@ Este documento apresenta a arquitetura completa do projeto AWS Luanti ALB/NLB po
 ## Documentos Relacionados
 
 - [Guia de Implantação Manual (13 blocos)](./IMPLANTACAO-AWS.md)
-- [Spot Instances e Auto Scaling](./SPOT-AUTOSCALING.md)
-- [Documentação de Rede (VPC, Subnets, IGW)](./docs/REDE.md)
-- [Documentação de Segurança (SGs, IAM)](./docs/SEGURANCA.md)
-- [Documentação de Monitoramento (CloudWatch)](./docs/MONITORAMENTO.md)
-- [Application Load Balancer](./docs/ALB.md)
-- [Network Load Balancer](./docs/NLB.md)
-- [Troubleshooting](./docs/TROUBLESHOOTING.md)
 
 ---
 
@@ -82,7 +75,7 @@ graph TB
 
 Ambas as subnets possuem atribuição automática de IP público habilitada, permitindo que as instâncias EC2 sejam acessíveis diretamente pela internet através dos Load Balancers.
 
-Para mais detalhes sobre a configuração de rede, consulte a [documentação de rede](./docs/REDE.md).
+Para mais detalhes sobre a configuração de rede, consulte a documentação em `docs/REDE.md`.
 
 ---
 
@@ -123,7 +116,7 @@ sequenceDiagram
 - **Health Check**: O Target Group verifica a saúde das instâncias via `GET /health` (HTTP 200) a cada 30 segundos. Instâncias que falham 3 verificações consecutivas são removidas do pool.
 - **Balanceamento**: O ALB distribui o tráfego entre as instâncias registradas no Target Group usando o algoritmo round-robin.
 
-Para mais detalhes sobre o ALB, consulte a [documentação do ALB](./docs/ALB.md).
+Para mais detalhes sobre o ALB, consulte a documentação em `docs/ALB.md`.
 
 ---
 
@@ -138,7 +131,7 @@ sequenceDiagram
     participant NLB as NLB (Layer 4)<br/>nlb-luanti-game
     participant TG as Target Group GAME<br/>UDP:30000
     participant EC2 as EC2 Docker<br/>(Servidor Luanti)
-    participant HC as Health Check<br/>TCP:30000
+    participant HC as Health Check<br/>TCP:8080
 
     Player->>DNS: Resolve game.DOMAIN
     DNS-->>Player: Alias → NLB DNS name
@@ -150,8 +143,8 @@ sequenceDiagram
     EC2-->>Player: UDP:30000 (Game Data)
 
     Note over HC,EC2: Health Check (paralelo)
-    HC->>EC2: TCP SYN :30000
-    EC2-->>HC: TCP SYN-ACK
+    HC->>EC2: TCP SYN :8080
+    EC2-->>HC: TCP SYN-ACK (socat health check)
     Note over HC: Target healthy ✓
 ```
 
@@ -159,10 +152,10 @@ sequenceDiagram
 
 - **Passthrough UDP**: O NLB encaminha os pacotes UDP sem modificação, mantendo a baixa latência necessária para jogos.
 - **Preservação de IP**: O IP de origem do jogador é preservado, permitindo que o servidor identifique cada cliente.
-- **Health Check TCP**: Como UDP não possui mecanismo nativo de confirmação de conexão, o health check utiliza TCP na mesma porta (30000) para verificar que o container está respondendo.
+- **Health Check TCP (porta 8080)**: Como UDP não possui mecanismo nativo de confirmação de conexão, o health check utiliza TCP na porta 8080, onde um serviço `socat` verifica se o container Luanti está rodando e responde OK ao NLB.
 - **Single Target**: O ASG-GAME mantém exatamente 1 instância (min=1, max=1), funcionando como self-healing sem escalabilidade horizontal.
 
-Para mais detalhes sobre o NLB, consulte a [documentação do NLB](./docs/NLB.md).
+Para mais detalhes sobre o NLB, consulte a documentação em `docs/NLB.md`.
 
 ---
 
@@ -190,7 +183,7 @@ graph TB
         end
 
         subgraph SG_GAME["SG-GAME"]
-            GAME_IN["Inbound:<br/>UDP 30000 de 0.0.0.0/0<br/>TCP 22 de &lt;MEU_IP&gt;/32"]
+            GAME_IN["Inbound:<br/>UDP 30000 de 0.0.0.0/0<br/>TCP 8080 de 10.0.0.0/16 (NLB HC)<br/>TCP 22 de &lt;MEU_IP&gt;/32"]
             GAME_OUT["Outbound:<br/>All traffic"]
         end
     end
@@ -247,7 +240,7 @@ graph LR
 | Acesso SSH restrito | Porta 22 disponível apenas para o IP do operador |
 | Sem regras desnecessárias | Nenhuma porta de entrada além das explicitamente definidas |
 
-Para mais detalhes sobre a configuração de segurança, consulte a [documentação de segurança](./docs/SEGURANCA.md).
+Para mais detalhes sobre a configuração de segurança, consulte a documentação em `docs/SEGURANCA.md`.
 
 ---
 
@@ -327,8 +320,8 @@ graph TB
 6. User Data provisiona a aplicação automaticamente
 7. Após grace period (300s), health check confirma a nova instância como healthy
 
-Para mais detalhes sobre Spot Instances e Auto Scaling, consulte o [guia de Spot e Auto Scaling](./SPOT-AUTOSCALING.md).
-Para configuração detalhada de monitoramento, consulte a [documentação de monitoramento](./docs/MONITORAMENTO.md).
+Para mais detalhes sobre Spot Instances e Auto Scaling, consulte a documentação em `docs/SPOT-AUTOSCALING.md`.
+Para configuração detalhada de monitoramento, consulte a documentação em `docs/MONITORAMENTO.md`.
 
 ---
 
@@ -358,7 +351,7 @@ graph TB
 
         subgraph TargetGroups["Target Groups"]
             TG_WEB["TG-WEB<br/>HTTP:80<br/>Health: GET /health<br/>Interval: 30s | 3/3"]
-            TG_GAME["TG-GAME<br/>UDP:30000<br/>Health: TCP:30000<br/>Interval: 30s | 3/3"]
+            TG_GAME["TG-GAME<br/>UDP:30000<br/>Health: TCP:8080 (Override)<br/>Interval: 30s | 3/3"]
         end
 
         subgraph AZ1["AZ-1 (10.0.1.0/24)"]

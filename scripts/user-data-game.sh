@@ -6,7 +6,7 @@
 # pelo Launch Template (LaunchTemplate-GAME).
 #
 # Função: Instalar Docker, baixar a imagem do servidor Luanti e iniciar o
-# container na porta UDP 30000. Também configura o CloudWatch Agent para
+# container na porta UDP/TCP 30000. Também configura o CloudWatch Agent para
 # coleta de logs e métricas.
 #
 # Sistema Operacional: Amazon Linux 2023
@@ -48,24 +48,70 @@ usermod -aG docker ec2-user
 # 3. Download da imagem e inicialização do container Luanti
 # =============================================================================
 echo "[user-data-game] Baixando imagem do servidor Luanti..."
-docker pull linuxserver/minetest:latest
+docker pull lscr.io/linuxserver/luanti:latest
 
-echo "[user-data-game] Iniciando container do servidor Luanti na porta UDP 30000..."
+echo "[user-data-game] Iniciando container do servidor Luanti na porta 30000 (UDP+TCP)..."
 docker run -d \
   --name luanti-server \
   --restart unless-stopped \
   -p 30000:30000/udp \
+  -p 30000:30000/tcp \
   -e PUID=1000 \
   -e PGID=1000 \
-  -e "CLI_ARGS=--gameid minetest" \
-  linuxserver/minetest:latest
+  -e "CLI_ARGS=--gameid devtest" \
+  -e "LUANTI_GAME_PATH=/config/.minetest/games" \
+  lscr.io/linuxserver/luanti:latest
 
 # Verificar se o container está rodando
 echo "[user-data-game] Verificando status do container..."
+sleep 5
 docker ps --filter "name=luanti-server" --format "{{.Status}}"
 
 # =============================================================================
-# 4. Instalação e configuração do CloudWatch Agent
+# 4. Health Check TCP para o NLB (porta 8080)
+# =============================================================================
+# O NLB não suporta health checks UDP. Criamos um listener TCP simples na
+# porta 8080 que verifica se o container Luanti está rodando.
+# Configure o Target Group com Health Check: TCP, porta 8080 (Override).
+# -----------------------------------------------------------------------------
+echo "[user-data-game] Configurando health check TCP na porta 8080..."
+
+cat > /usr/local/bin/health-check-game.sh <<'HEALTHEOF'
+#!/bin/bash
+# Verifica se o container luanti-server está rodando
+if docker inspect --format='{{.State.Running}}' luanti-server 2>/dev/null | grep -q "true"; then
+  echo "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK"
+else
+  echo "HTTP/1.1 503 Service Unavailable\r\nContent-Length: 4\r\n\r\nFAIL"
+fi
+HEALTHEOF
+chmod +x /usr/local/bin/health-check-game.sh
+
+# Criar serviço systemd para o health check usando socat
+dnf install -y socat
+
+cat > /etc/systemd/system/game-health-check.service <<'SERVICEEOF'
+[Unit]
+Description=Game Server Health Check (TCP:8080)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/socat TCP-LISTEN:8080,reuseaddr,fork EXEC:/usr/local/bin/health-check-game.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+SERVICEEOF
+
+systemctl daemon-reload
+systemctl enable --now game-health-check.service
+echo "[user-data-game] Health check TCP ativo na porta 8080"
+
+# =============================================================================
+# 5. Instalação e configuração do CloudWatch Agent
 # =============================================================================
 echo "[user-data-game] Instalando CloudWatch Agent..."
 dnf install -y amazon-cloudwatch-agent
@@ -132,4 +178,4 @@ echo "[user-data-game] Iniciando CloudWatch Agent..."
 # 5. Finalização
 # =============================================================================
 echo "[user-data-game] Provisionamento concluído com sucesso: $(date)"
-echo "[user-data-game] Container Luanti rodando na porta UDP 30000"
+echo "[user-data-game] Container Luanti rodando na porta UDP/TCP 30000"

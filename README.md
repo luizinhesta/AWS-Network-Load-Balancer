@@ -16,13 +16,6 @@ Toda a infraestrutura é criada manualmente via Console AWS, sem uso de CloudFor
 |-----------|-----------|
 | [ARQUITETURA.md](ARQUITETURA.md) | Diagramas detalhados da arquitetura (topologia, tráfego, segurança, Auto Scaling, monitoramento) |
 | [IMPLANTACAO-AWS.md](IMPLANTACAO-AWS.md) | Guia passo a passo para criação manual de todos os recursos via Console AWS (13 blocos) |
-| [SPOT-AUTOSCALING.md](SPOT-AUTOSCALING.md) | Estratégia Spot, política de Auto Scaling, tratamento de interrupção e métricas |
-| [docs/ALB.md](docs/ALB.md) | Documentação técnica sobre Application Load Balancer |
-| [docs/NLB.md](docs/NLB.md) | Documentação técnica sobre Network Load Balancer |
-| [docs/REDE.md](docs/REDE.md) | Documentação técnica sobre VPC e rede |
-| [docs/SEGURANCA.md](docs/SEGURANCA.md) | Documentação técnica sobre Security Groups e IAM |
-| [docs/MONITORAMENTO.md](docs/MONITORAMENTO.md) | Documentação técnica sobre CloudWatch e observabilidade |
-| [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Guia de resolução de problemas comuns |
 
 ---
 
@@ -33,7 +26,7 @@ Toda a infraestrutura é criada manualmente via Console AWS, sem uso de CloudFor
 | `web/` | Portal web informativo com HTML, CSS, JavaScript e configuração Nginx |
 | `game/` | Configuração Docker do servidor Luanti (Dockerfile, docker-compose, configs) |
 | `scripts/` | Scripts de User Data para provisionamento EC2 e utilitários de validação AWS CLI |
-| `docs/` | Documentação técnica separada por tema (ALB, NLB, rede, segurança, monitoramento, troubleshooting) |
+| `docs/` | Documentação técnica de referência (ALB, NLB, rede, segurança, monitoramento, Spot/Auto Scaling, troubleshooting) |
 | `diagrams/` | Diagramas de arquitetura em formato Mermaid e imagens exportadas |
 
 ---
@@ -49,7 +42,7 @@ Toda a infraestrutura é criada manualmente via Console AWS, sem uso de CloudFor
 | Caso de uso neste projeto | Portal web com HTTPS e redirect HTTP→HTTPS | Servidor de jogo Luanti via UDP porta 30000 |
 | Roteamento | Baseado em conteúdo (path, host, headers) | Baseado em conexão (IP + porta) |
 | Latência | Maior (inspeção de conteúdo HTTP) | Ultra-baixa (passthrough sem inspeção) |
-| Health Check | HTTP/HTTPS com path customizado | TCP, HTTP ou HTTPS |
+| Health Check | HTTP/HTTPS com path customizado | TCP, HTTP ou HTTPS (porta Override recomendada para UDP) |
 
 ---
 
@@ -83,7 +76,7 @@ graph TB
         NLB[NLB - Layer 4<br/>UDP:30000]
 
         TG_WEB[Target Group WEB<br/>HTTP:80 /health]
-        TG_GAME[Target Group GAME<br/>UDP:30000]
+        TG_GAME[Target Group GAME<br/>UDP:30000<br/>Health: TCP:8080]
 
         ASG_WEB[ASG Web<br/>Min:1 Des:1 Max:2<br/>CPU Target 70%]
         ASG_GAME[ASG Game<br/>Min:1 Des:1 Max:1<br/>Self-Healing]
@@ -138,6 +131,32 @@ graph TB
 
 4. **Execute os scripts de User Data:**
    - Os scripts em `scripts/user-data-web.sh` e `scripts/user-data-game.sh` são colados no campo User Data dos Launch Templates durante a criação no Console
+
+### Atualização do Portal Web (Deploy de Novas Versões)
+
+O portal web é provisionado via User Data no Launch Template. Para publicar uma nova versão:
+
+1. **Atualize o User Data no Launch Template:**
+   - Acesse **EC2 → Launch Templates → AWS-Luanti-NLB-ALB-Lab-LT-WEB**
+   - Clique em **Actions → Modify template (Create new version)**
+   - Atualize o conteúdo do campo **User Data** com o novo `scripts/user-data-web.sh`
+   - Clique em **Create template version**
+   - Marque a nova versão como **Default version**
+
+2. **Execute um Instance Refresh no Auto Scaling Group:**
+   - Acesse **EC2 → Auto Scaling Groups → ASG-WEB**
+   - Clique na aba **Instance refresh** → **Start instance refresh**
+   - Em **Minimum healthy percentage**, defina `0%` (para lab) ou `50%` (para produção)
+   - Clique em **Start instance refresh**
+
+3. **Aguarde a substituição:**
+   - O ASG terminará as instâncias antigas e lançará novas com o User Data atualizado
+   - As novas instâncias serão registradas automaticamente no Target Group
+   - O ALB começará a rotear tráfego para elas assim que o health check passar
+
+> **Alternativa rápida para testes**: Termine a instância manualmente (EC2 → Instâncias → Terminate). O ASG automaticamente lançará uma nova instância com o Launch Template mais recente.
+
+---
 
 ### Validação
 

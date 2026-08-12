@@ -35,3 +35,9 @@ Desktop.ini
 # AWS credentials locais
 .aws/credentials
 .aws/config
+
+# Documentação técnica de referência (não versionada)
+docs/
+
+# Diagramas (apenas material visual de documentação)
+diagrams/

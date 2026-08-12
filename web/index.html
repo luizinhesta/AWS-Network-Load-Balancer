@@ -32,18 +32,41 @@
             <h2>Conectar ao Servidor de Jogo</h2>
             <p>Para jogar no servidor Luanti hospedado nesta infraestrutura, utilize o endereço abaixo:</p>
             <div class="server-address">
-                <code id="server-address">game.seudominio.com:30000</code>
+                <code id="server-address">game.dev.inhesta.net:30000</code>
                 <button id="copy-btn" type="button" aria-label="Copiar endereço do servidor">Copiar</button>
                 <span id="copy-feedback" class="copy-feedback" aria-live="polite" hidden>Copiado!</span>
             </div>
-            <h3>Instruções de Conexão</h3>
+
+            <h3>1. Baixar o Luanti</h3>
+            <p>O Luanti (antigo Minetest) é um jogo de mundo aberto gratuito e open-source, similar ao Minecraft.</p>
             <ol>
-                <li>Baixe e instale o <a href="https://www.luanti.org/" target="_blank" rel="noopener noreferrer">Luanti</a> (anteriormente Minetest).</li>
-                <li>Abra o Luanti e clique em <strong>Multiplayer</strong>.</li>
-                <li>No campo <strong>Endereço</strong>, insira: <code>game.seudominio.com</code></li>
-                <li>No campo <strong>Porta</strong>, insira: <code>30000</code></li>
-                <li>Escolha um nome de usuário e clique em <strong>Conectar</strong>.</li>
+                <li>Acesse o site oficial: <a href="https://www.luanti.org/en/downloads/" target="_blank" rel="noopener noreferrer">luanti.org/downloads</a></li>
+                <li>Clique em <strong>"Luanti 5.16.1 - installer, 64-bit (recommended)"</strong> para baixar o instalador Windows.</li>
+                <li>Se preferir a versão portátil (sem instalação), baixe o arquivo <code>.zip</code> e extraia em uma pasta.</li>
             </ol>
+
+            <h3>2. Instalar</h3>
+            <ol>
+                <li>Execute o arquivo <code>luanti-5.16.1.exe</code> baixado.</li>
+                <li>Clique em <strong>"Sim"</strong> na permissão de administrador.</li>
+                <li>Siga o assistente: aceite os termos, escolha a pasta e clique em <strong>"Instalar"</strong>.</li>
+                <li>Após concluir, clique em <strong>"Finalizar"</strong>.</li>
+            </ol>
+
+            <h3>3. Configurar e Conectar ao Servidor</h3>
+            <ol>
+                <li>Abra o <strong>Luanti</strong> pelo Menu Iniciar ou Área de Trabalho.</li>
+                <li>Clique na aba <strong>"Jogar Online"</strong>.</li>
+                <li>No campo <strong>Endereço</strong> (canto superior direito), digite: <code>game.dev.inhesta.net</code></li>
+                <li>No campo <strong>Porta</strong>, mantenha: <code>30000</code></li>
+                <li>No campo <strong>Nome</strong>, escolha um nome de usuário (ex: seu nome).</li>
+                <li>O campo <strong>Senha</strong> pode ficar vazio.</li>
+                <li>Clique em <strong>"Registrar"</strong> (primeira vez) ou <strong>"Entrar"</strong> (se já tiver conta).</li>
+            </ol>
+
+            <div class="info-box">
+                <strong>Dica:</strong> Após conectar pela primeira vez, o servidor aparecerá na seção <em>"Favoritos"</em> para acesso rápido nas próximas vezes.
+            </div>
         </section>
 
         <section id="arquitetura">
