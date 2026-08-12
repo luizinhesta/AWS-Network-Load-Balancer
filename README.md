@@ -1,4 +1,4 @@
-# AWS Luanti ALB/NLB — Arquitetura de Load Balancing na AWS
+# AWS Load Balancing ALB/NLB - Luanti
 
 ## Descrição do Projeto
 

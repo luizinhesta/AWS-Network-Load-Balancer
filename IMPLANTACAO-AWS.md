@@ -1,4 +1,4 @@
-# Guia de Implantação Manual — AWS Luanti ALB/NLB
+# Guia de Implantação Manual — AWS Load Balancing ALB/NLB - Luanti
 
 > **Documento**: Instruções passo a passo para criação manual de todos os recursos AWS via Console.
 > **Método**: Console AWS (sem Infrastructure as Code).
