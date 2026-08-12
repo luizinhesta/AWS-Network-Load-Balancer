@@ -1,4 +1,4 @@
-# Arquitetura do Projeto AWS Load Balancing ALB/NLB - Luanti
+# Arquitetura do Projeto AWS Load Balancing ALB/NLB - GAME Luanti
 
 Este documento apresenta a arquitetura completa do projeto AWS Luanti ALB/NLB por meio de diagramas detalhados e descrições técnicas. O objetivo é fornecer uma visão clara de como os componentes interagem, desde a topologia de rede até o monitoramento e observabilidade.
 

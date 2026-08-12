@@ -120,7 +120,7 @@ Para facilitar a identificação e organização dos recursos, considere adicion
 5. Clique em **Create VPC**.
 6. Anote o **VPC ID** gerado (formato: `vpc-xxxxxxxxxxxxxxxxx`).
 
-> 📸 **Screenshot placeholder**: _Captura da tela de confirmação da VPC criada com sucesso._
+
 
 ---
 
@@ -147,7 +147,7 @@ Para facilitar a identificação e organização dos recursos, considere adicion
 4. Clique em **Create subnet**.
 5. Anote o **Subnet ID** gerado.
 
-> 📸 **Screenshot placeholder**: _Captura da subnet AZ-1 criada com sucesso._
+
 
 ---
 
@@ -174,7 +174,7 @@ Para facilitar a identificação e organização dos recursos, considere adicion
 4. Clique em **Create subnet**.
 5. Anote o **Subnet ID** gerado.
 
-> 📸 **Screenshot placeholder**: _Captura da subnet AZ-2 criada com sucesso._
+
 
 ---
 
@@ -189,7 +189,7 @@ Para **cada uma** das duas subnets criadas:
 5. Clique em **Save**.
 6. Repita para a segunda subnet (`AWS-Luanti-NLB-ALB-Lab-PublicSubnet-AZ2`).
 
-> 📸 **Screenshot placeholder**: _Captura mostrando a opção "Auto-assign public IPv4 address" habilitada._
+
 
 ---
 
@@ -215,7 +215,7 @@ Para **cada uma** das duas subnets criadas:
 6. Selecione `AWS-Luanti-NLB-ALB-Lab-VPC`.
 7. Clique em **Attach internet gateway**.
 
-> 📸 **Screenshot placeholder**: _Captura do Internet Gateway com estado "Attached"._
+
 
 ---
 
@@ -254,7 +254,7 @@ Para **cada uma** das duas subnets criadas:
 
 4. Clique em **Save changes**.
 
-> 📸 **Screenshot placeholder**: _Captura da Route Table com rota 0.0.0.0/0 → IGW._
+
 
 ---
 
@@ -267,7 +267,7 @@ Para **cada uma** das duas subnets criadas:
    - `AWS-Luanti-NLB-ALB-Lab-PublicSubnet-AZ2`
 4. Clique em **Save associations**.
 
-> 📸 **Screenshot placeholder**: _Captura da associação das subnets à Route Table pública._
+
 
 ---
 
@@ -318,7 +318,7 @@ Para **cada uma** das duas subnets criadas:
 6. Clique em **Create security group**.
 7. Anote o **Security Group ID** (formato: `sg-xxxxxxxxxxxxxxxxx`).
 
-> 📸 **Screenshot placeholder**: _Captura do SG-ALB criado com regras de entrada HTTP e HTTPS._
+
 
 ---
 
@@ -355,7 +355,7 @@ Para **cada uma** das duas subnets criadas:
 6. Clique em **Create security group**.
 7. Anote o **Security Group ID**.
 
-> 📸 **Screenshot placeholder**: _Captura do SG-WEB com regra de entrada referenciando o SG-ALB por ID._
+
 
 ---
 
@@ -391,7 +391,7 @@ Para **cada uma** das duas subnets criadas:
 6. Clique em **Create security group**.
 7. Anote o **Security Group ID**.
 
-> 📸 **Screenshot placeholder**: _Captura do SG-GAME com regra UDP 30000._
+
 
 ---
 
@@ -412,7 +412,7 @@ Se você necessita de acesso SSH para debugging, adicione esta regra aos Securit
 4. Clique em **Save rules**.
 5. Repita para o outro Security Group, se necessário.
 
-> 📸 **Screenshot placeholder**: _Captura da regra SSH restrita ao IP do operador._
+
 
 ---
 
@@ -452,7 +452,7 @@ Se você necessita de acesso SSH para debugging, adicione esta regra aos Securit
 
 9. Clique em **Create role**.
 
-> 📸 **Screenshot placeholder**: _Captura da WebRole criada com sucesso._
+
 
 ---
 
@@ -518,7 +518,7 @@ Se você necessita de acesso SSH para debugging, adicione esta regra aos Securit
 
 7. Clique em **Create policy**.
 
-> 📸 **Screenshot placeholder**: _Captura da WebPolicy criada com JSON de menor privilégio._
+
 
 ---
 
@@ -529,7 +529,7 @@ Se você necessita de acesso SSH para debugging, adicione esta regra aos Securit
 3. Pesquise por `AWS-Luanti-NLB-ALB-Lab-WebPolicy`.
 4. Marque a policy e clique em **Add permissions**.
 
-> 📸 **Screenshot placeholder**: _Captura da policy anexada à WebRole._
+
 
 ---
 
@@ -558,7 +558,7 @@ Se você necessita de acesso SSH para debugging, adicione esta regra aos Securit
 
 9. Clique em **Create role**.
 
-> 📸 **Screenshot placeholder**: _Captura da GameRole criada com sucesso._
+
 
 ---
 
@@ -624,7 +624,7 @@ Se você necessita de acesso SSH para debugging, adicione esta regra aos Securit
 
 7. Clique em **Create policy**.
 
-> 📸 **Screenshot placeholder**: _Captura da GamePolicy criada com JSON de menor privilégio._
+
 
 ---
 
@@ -635,7 +635,7 @@ Se você necessita de acesso SSH para debugging, adicione esta regra aos Securit
 3. Pesquise por `AWS-Luanti-NLB-ALB-Lab-GamePolicy`.
 4. Marque a policy e clique em **Add permissions**.
 
-> 📸 **Screenshot placeholder**: _Captura da policy anexada à GameRole._
+
 
 ---
 
@@ -762,7 +762,7 @@ O script realiza as seguintes operações:
 
 4. Clique em **Create launch template**.
 
-> 📸 **Screenshot placeholder**: _Captura do LT-WEB criado com configuração Spot e User Data._
+
 
 ---
 
@@ -858,7 +858,7 @@ O script realiza as seguintes operações:
 
 4. Clique em **Create launch template**.
 
-> 📸 **Screenshot placeholder**: _Captura do LT-GAME criado com configuração Spot e User Data._
+
 
 ---
 
@@ -940,7 +940,7 @@ Tipos de instância configurados para o pool de jogo:
 8. Na tela **Register targets**, **não registre targets agora** (o ASG fará isso automaticamente no Bloco 8).
 9. Clique em **Create target group**.
 
-> 📸 **Screenshot placeholder**: _Captura do TG-WEB criado com health check em /health._
+
 
 ---
 
@@ -987,7 +987,7 @@ Tipos de instância configurados para o pool de jogo:
 8. Na tela **Register targets**, **não registre targets agora** (o ASG fará isso automaticamente no Bloco 8).
 9. Clique em **Create target group**.
 
-> 📸 **Screenshot placeholder**: _Captura do TG-GAME criado com health check TCP na porta 8080 (Override)._
+
 
 ---
 
@@ -1116,7 +1116,7 @@ Configure o primeiro listener (HTTP):
 7. Aguarde o estado mudar para **Active** (pode levar 2–3 minutos).
 8. Anote o **DNS name** do ALB (formato: `alb-luanti-web-XXXXXXXXX.<region>.elb.amazonaws.com`).
 
-> 📸 **Screenshot placeholder**: _Captura do ALB criado com estado Active e ambos os listeners configurados._
+
 
 ---
 
@@ -1133,7 +1133,7 @@ Após a criação, confirme os listeners:
 | HTTP | 80 | Redirect para `HTTPS:443` (301) |
 | HTTPS | 443 | Forward para `TG-WEB` |
 
-> 📸 **Screenshot placeholder**: _Captura da aba Listeners mostrando HTTP:80 redirect e HTTPS:443 forward._
+
 
 ---
 
